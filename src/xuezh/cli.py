@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import envelope
+from xuezh.core import clock, envelope, paths, retention
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -83,11 +83,34 @@ def gc(
     dry_run: bool = typer.Option(True, "--dry-run", help="Preview deletions (default)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    if apply and dry_run:
+        dry_run = False
+    if not apply and not dry_run:
+        dry_run = True
+
+    workspace = paths.ensure_workspace()
+    candidates = retention.collect_gc_candidates(workspace, now=clock.now_utc())
+    rel_candidates = [str(path.relative_to(workspace)) for path in candidates]
+
+    deleted_count = 0
+    bytes_freed = 0
+    if apply:
+        for path in candidates:
+            if not path.exists() or not path.is_file():
+                continue
+            bytes_freed += path.stat().st_size
+            path.unlink()
+            deleted_count += 1
+
+    out = envelope.ok(
         command="gc",
-        error_type="NOT_IMPLEMENTED",
-        message="gc is not implemented yet (see ticket T-02B).",
-        details={"apply": apply, "dry_run": dry_run},
+        data={
+            "dry_run": dry_run,
+            "apply": apply,
+            "candidates": rel_candidates,
+            "deleted_count": deleted_count,
+            "bytes_freed": bytes_freed,
+        },
     )
     _emit(out)
 
