@@ -70,5 +70,5 @@ As an operator, I can rely on the engine to never produce â€œwhat to learn nextâ
 ## UR-10: Deterministic artifact retention
 As an operator, I can keep the workspace from growing unboundedly.
 
-- GC is deterministic and safe (`chlearn gc`)
+- GC is deterministic and safe (`xuezh gc`)
 - retention windows are configurable via env vars

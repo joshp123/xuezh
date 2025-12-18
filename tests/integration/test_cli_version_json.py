@@ -4,7 +4,7 @@ import sys
 
 
 def run(*args: str) -> dict:
-    p = subprocess.run([sys.executable, "-m", "chlearn.cli", *args], capture_output=True, text=True)
+    p = subprocess.run([sys.executable, "-m", "xuezh.cli", *args], capture_output=True, text=True)
     assert p.returncode == 0
     return json.loads(p.stdout)
 

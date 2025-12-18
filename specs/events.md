@@ -29,8 +29,8 @@ Required fields:
 
 ## CLI commands
 
-- `chlearn event log --type exposure --modality reading --items w_xxx,w_yyy --context ct_... --json`
-- `chlearn event list --since 7d --limit 200 --json`
+- `xuezh event log --type exposure --modality reading --items w_xxx,w_yyy --context ct_... --json`
+- `xuezh event list --since 7d --limit 200 --json`
 
 Notes:
 - `--items` is a comma-separated list of item IDs (bounded).
@@ -38,7 +38,7 @@ Notes:
 
 ## Snapshot integration
 
-`chlearn snapshot` should include:
+`xuezh snapshot` should include:
 - a bounded list of recent events (for last 7 days, limit N)
 - aggregated exposure counts by modality (window = snapshot window)
 

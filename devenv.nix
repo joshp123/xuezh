@@ -31,7 +31,7 @@
   ];
 
   enterShell = ''
-    echo "Entered devenv shell for chlearn."
+    echo "Entered devenv shell for xuezh."
     echo "Reminder: do not use brew/global installs; update devenv.nix instead."
   '';
 }

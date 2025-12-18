@@ -16,7 +16,7 @@ Scope:
 
 ### Integration tests (CLI)
 Scope:
-- invoking `chlearn` commands
+- invoking `xuezh` commands
 - validating exit codes
 - validating JSON envelope schemas
 - bounded output behavior (`--max-bytes`, `--limit`)
@@ -49,7 +49,7 @@ Scope:
 - `tests/contract/test_contract_sync.py` ensures BDD commands, schemas, and the machine-readable contract stay aligned.
 
 ## Strict BDD mode
-Set `CHLEARN_STRICT_BDD=1` to make BDD scenarios fail instead of xfail when commands are unimplemented.
+Set `XUEZH_STRICT_BDD=1` to make BDD scenarios fail instead of xfail when commands are unimplemented.
 
 ## No skipped tests
 Skipped tests are forbidden and enforced by `tests/conftest.py`. Use xfail if truly necessary.

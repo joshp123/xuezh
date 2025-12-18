@@ -3,7 +3,7 @@
 You are an autonomous coding agent implementing this repo.
 
 ## Mission
-Implement the `chlearn` learning engine as a **ZFC/Unix-style dumb pipe** used by a SOTA LLM + Telegram bot.
+Implement the `xuezh` learning engine as a **ZFC/Unix-style dumb pipe** used by a SOTA LLM + Telegram bot.
 
 - The LLM does lesson planning and decides what to teach next.
 - The engine stores primary sources, provides bounded reports, and materializes audio artifacts.
@@ -28,7 +28,7 @@ Implement the `chlearn` learning engine as a **ZFC/Unix-style dumb pipe** used b
    - Engine returns facts + candidate sets + mechanical schedule state only.
 
 ## Deliverables
-- A working `chlearn` CLI with JSON envelope outputs.
+- A working `xuezh` CLI with JSON envelope outputs.
 - SQLite persistence in workspace path.
 - Snapshot + report commands (bounded outputs).
 - Audio pipeline wrappers for format conversion, TTS, STT, and assessment (v0 local; v1 optional paid).

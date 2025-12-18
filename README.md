@@ -1,4 +1,4 @@
-# Chinese Learning Engine (ZFC / Unix-style)
+# xuezh (Chinese Learning Engine, ZFC / Unix-style)
 
 This repo is a **local learning engine** for Mandarin study. It is designed to be used as a **tool/skill** behind an existing Telegram bot + SOTA LLM.
 
@@ -15,7 +15,7 @@ The engine must remain **ZFC-compliant**: no local ranking/selection heuristics;
 - `tests/fixtures/` : minimal dataset fixtures
 
 
-- `src/chlearn/` : Python package + CLI skeleton (`chlearn`)
+- `src/xuezh/` : Python package + CLI skeleton (`xuezh`)
 - `tickets/` : project tickets (convert these into Beads tickets, preserving dependency + order)
 - `specs/` : user requirements, BDD scenarios, and testing pyramid strategy
 - `skills/chinese-learning-orchestrator/` : the Skill prompt glue (SKILL.md + references)
@@ -36,8 +36,8 @@ The engine must remain **ZFC-compliant**: no local ranking/selection heuristics;
 
 3) Run the CLI:
    ```bash
-   chlearn --help
-   chlearn version --json
+   xuezh --help
+   xuezh version --json
    ```
 
 4) Run tests:
@@ -55,11 +55,11 @@ The engine must remain **ZFC-compliant**: no local ranking/selection heuristics;
 
 The engine stores data under:
 
-- `~/.clawdis/workspace/chinese-learning/`
+- `~/.clawdis/workspace/xuezh/`
 
 Override via environment variables:
-- `CHLEARN_WORKSPACE_DIR`
-- `CHLEARN_DB_PATH`
+- `XUEZH_WORKSPACE_DIR`
+- `XUEZH_DB_PATH`
 
 ## Ticket execution method
 

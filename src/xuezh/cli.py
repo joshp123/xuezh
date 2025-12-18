@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import typer
 
-from chlearn.core import envelope
-from chlearn.core.jsonio import dumps
+from xuezh.core import envelope
+from xuezh.core.jsonio import dumps
 
-app = typer.Typer(add_completion=False, help="chlearn - local Chinese learning engine (ZFC/Unix-style)")
+app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
 
 # ---- Sub-apps (public CLI contract) ----
 db_app = typer.Typer(add_completion=False)
@@ -33,7 +33,7 @@ def version(json_output: bool = typer.Option(False, "--json", help="Output JSON 
     if json_output:
         typer.echo(dumps(envelope.ok(command="version", data={"version": "0.1.0"})))
     else:
-        typer.echo("chlearn 0.1.0")
+        typer.echo("xuezh 0.1.0")
 
 
 @app.command()

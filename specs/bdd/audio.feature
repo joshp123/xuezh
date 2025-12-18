@@ -4,7 +4,7 @@ Feature: Audio processing pipeline
     Given a clean workspace
 
     # Input: Telegram-style voice note (ogg/opus)
-    When the client runs "chlearn audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text '你好' --mode local --json"
+    When the client runs "xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text '你好' --mode local --json"
     Then the engine returns an OK envelope
     And the output matches the command-specific JSON schema
     And the engine does not return recommendation fields
@@ -18,28 +18,28 @@ Feature: Audio processing pipeline
 
 Scenario: Convert audio file formats (mechanical)
   Given a clean workspace
-  When the client runs "chlearn audio convert --in tests/fixtures/audio/sine_440hz.wav --out {workspace}/artifacts/converted.ogg --format ogg --json"
+  When the client runs "xuezh audio convert --in tests/fixtures/audio/sine_440hz.wav --out {workspace}/artifacts/converted.ogg --format ogg --json"
   Then the engine returns an OK envelope
   And the output matches the command-specific JSON schema
   And the engine does not return recommendation fields
 
 Scenario: TTS produces a voice note artifact
   Given a clean workspace
-  When the client runs "chlearn audio tts --text '你好' --voice XiaoxiaoNeural --out {workspace}/artifacts/tts.ogg --json"
+  When the client runs "xuezh audio tts --text '你好' --voice XiaoxiaoNeural --out {workspace}/artifacts/tts.ogg --json"
   Then the engine returns an OK envelope
   And the output matches the command-specific JSON schema
   And the engine does not return recommendation fields
 
 Scenario: STT returns a transcript artifact
   Given a clean workspace
-  When the client runs "chlearn audio stt --in tests/fixtures/audio/sine_440hz.wav --json"
+  When the client runs "xuezh audio stt --in tests/fixtures/audio/sine_440hz.wav --json"
   Then the engine returns an OK envelope
   And the output matches the command-specific JSON schema
   And the engine does not return recommendation fields
 
 Scenario: Pronunciation assessment returns an assessment artifact
   Given a clean workspace
-  When the client runs "chlearn audio assess --ref-text '你好' --in tests/fixtures/audio/voice_min.ogg --mode local --json"
+  When the client runs "xuezh audio assess --ref-text '你好' --in tests/fixtures/audio/voice_min.ogg --mode local --json"
   Then the engine returns an OK envelope
   And the output matches the command-specific JSON schema
   And the engine does not return recommendation fields

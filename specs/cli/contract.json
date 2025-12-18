@@ -4,157 +4,157 @@
   "commands": [
     {
       "id": "version",
-      "cli": "chlearn version --json",
+      "cli": "xuezh version --json",
       "schema_ok": "schemas/version.schema.json",
       "ticket": "T-00",
-      "example_cli": "chlearn version --json"
+      "example_cli": "xuezh version --json"
     },
     {
       "id": "snapshot",
-      "cli": "chlearn snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json",
+      "cli": "xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json",
       "schema_ok": "schemas/snapshot.schema.json",
       "ticket": "T-05",
-      "example_cli": "chlearn snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json"
+      "example_cli": "xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json"
     },
     {
       "id": "db.init",
-      "cli": "chlearn db init --json",
+      "cli": "xuezh db init --json",
       "schema_ok": "schemas/db.init.schema.json",
       "ticket": "T-03",
-      "example_cli": "chlearn db init --json"
+      "example_cli": "xuezh db init --json"
     },
     {
       "id": "dataset.import",
-      "cli": "chlearn dataset import --type hsk_vocab --path FILE --json",
+      "cli": "xuezh dataset import --type hsk_vocab --path FILE --json",
       "schema_ok": "schemas/dataset.import.schema.json",
       "ticket": "T-04",
-      "example_cli": "chlearn dataset import --type hsk_vocab --path FILE --json"
+      "example_cli": "xuezh dataset import --type hsk_vocab --path FILE --json"
     },
     {
       "id": "review.start",
-      "cli": "chlearn review start --limit 10 --json",
+      "cli": "xuezh review start --limit 10 --json",
       "schema_ok": "schemas/review.start.schema.json",
       "ticket": "T-06",
-      "example_cli": "chlearn review start --limit 10 --json"
+      "example_cli": "xuezh review start --limit 10 --json"
     },
     {
       "id": "review.grade",
-      "cli": "chlearn review grade --item ITEM --grade 4 --json",
+      "cli": "xuezh review grade --item ITEM --grade 4 --json",
       "schema_ok": "schemas/review.grade.schema.json",
       "ticket": "T-06",
-      "example_cli": "chlearn review grade --item ITEM --grade 4 --json"
+      "example_cli": "xuezh review grade --item ITEM --grade 4 --json"
     },
     {
       "id": "review.bury",
-      "cli": "chlearn review bury --item ITEM --reason ... --json",
+      "cli": "xuezh review bury --item ITEM --reason ... --json",
       "schema_ok": "schemas/review.bury.schema.json",
       "ticket": "T-06",
-      "example_cli": "chlearn review bury --item ITEM --reason ... --json"
+      "example_cli": "xuezh review bury --item ITEM --reason ... --json"
     },
     {
       "id": "srs.preview",
-      "cli": "chlearn srs preview --days 14 --json",
+      "cli": "xuezh srs preview --days 14 --json",
       "schema_ok": "schemas/srs.preview.schema.json",
       "ticket": "T-06",
-      "example_cli": "chlearn srs preview --days 14 --json"
+      "example_cli": "xuezh srs preview --days 14 --json"
     },
     {
       "id": "report.hsk",
-      "cli": "chlearn report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --json",
+      "cli": "xuezh report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --json",
       "schema_ok": "schemas/report.hsk.schema.json",
       "ticket": "T-07",
-      "example_cli": "chlearn report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --json"
+      "example_cli": "xuezh report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --json"
     },
     {
       "id": "report.mastery",
-      "cli": "chlearn report mastery --item-type word --window 90d --max-items 200 --max-bytes 200000 --json",
+      "cli": "xuezh report mastery --item-type word --window 90d --max-items 200 --max-bytes 200000 --json",
       "schema_ok": "schemas/report.mastery.schema.json",
       "ticket": "T-07",
-      "example_cli": "chlearn report mastery --item-type word --window 90d --max-items 200 --max-bytes 200000 --json"
+      "example_cli": "xuezh report mastery --item-type word --window 90d --max-items 200 --max-bytes 200000 --json"
     },
     {
       "id": "report.due",
-      "cli": "chlearn report due --limit 50 --max-bytes 200000 --json",
+      "cli": "xuezh report due --limit 50 --max-bytes 200000 --json",
       "schema_ok": "schemas/report.due.schema.json",
       "ticket": "T-07",
-      "example_cli": "chlearn report due --limit 50 --max-bytes 200000 --json"
+      "example_cli": "xuezh report due --limit 50 --max-bytes 200000 --json"
     },
     {
       "id": "audio.convert",
-      "cli": "chlearn audio convert --in IN --out OUT --format wav --json",
+      "cli": "xuezh audio convert --in IN --out OUT --format wav --json",
       "schema_ok": "schemas/audio.convert.schema.json",
       "ticket": "T-08",
-      "example_cli": "chlearn audio convert --in IN --out OUT --format wav --json"
+      "example_cli": "xuezh audio convert --in IN --out OUT --format wav --json"
     },
     {
       "id": "audio.tts",
-      "cli": "chlearn audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --json",
+      "cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --json",
       "schema_ok": "schemas/audio.tts.schema.json",
       "ticket": "T-08",
-      "example_cli": "chlearn audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --json"
+      "example_cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --json"
     },
     {
       "id": "audio.stt",
-      "cli": "chlearn audio stt --in IN.wav --json",
+      "cli": "xuezh audio stt --in IN.wav --json",
       "schema_ok": "schemas/audio.stt.schema.json",
       "ticket": "T-09",
-      "example_cli": "chlearn audio stt --in IN.wav --json"
+      "example_cli": "xuezh audio stt --in IN.wav --json"
     },
     {
       "id": "audio.assess",
-      "cli": "chlearn audio assess --ref-text TEXT --in IN.wav --mode local --json",
+      "cli": "xuezh audio assess --ref-text TEXT --in IN.wav --mode local --json",
       "schema_ok": "schemas/audio.assess.schema.json",
       "ticket": "T-10",
-      "example_cli": "chlearn audio assess --ref-text TEXT --in IN.wav --mode local --json"
+      "example_cli": "xuezh audio assess --ref-text TEXT --in IN.wav --mode local --json"
     },
     {
       "id": "audio.process-voice",
-      "cli": "chlearn audio process-voice --in voice.ogg --ref-text TEXT --mode local --json",
+      "cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --mode local --json",
       "schema_ok": "schemas/audio.process-voice.schema.json",
       "ticket": "T-10",
-      "example_cli": "chlearn audio process-voice --in voice.ogg --ref-text TEXT --mode local --json"
+      "example_cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --mode local --json"
     },
     {
       "id": "content.cache.put",
-      "cli": "chlearn content cache put --type story --key HASH --in FILE --json",
+      "cli": "xuezh content cache put --type story --key HASH --in FILE --json",
       "schema_ok": "schemas/content.cache.put.schema.json",
       "ticket": "T-11",
-      "example_cli": "chlearn content cache put --type story --key HASH --in FILE --json"
+      "example_cli": "xuezh content cache put --type story --key HASH --in FILE --json"
     },
     {
       "id": "content.cache.get",
-      "cli": "chlearn content cache get --type story --key HASH --json",
+      "cli": "xuezh content cache get --type story --key HASH --json",
       "schema_ok": "schemas/content.cache.get.schema.json",
       "ticket": "T-11",
-      "example_cli": "chlearn content cache get --type story --key HASH --json"
+      "example_cli": "xuezh content cache get --type story --key HASH --json"
     },
     {
       "id": "doctor",
-      "cli": "chlearn doctor --json",
+      "cli": "xuezh doctor --json",
       "schema_ok": "schemas/doctor.schema.json",
       "ticket": "T-14",
-      "example_cli": "chlearn doctor --json"
+      "example_cli": "xuezh doctor --json"
     },
     {
       "id": "event.log",
-      "cli": "chlearn event log --type exposure --modality reading --items w_aaaaaaaaaaaa --json",
+      "cli": "xuezh event log --type exposure --modality reading --items w_aaaaaaaaaaaa --json",
       "schema_ok": "schemas/event.log.schema.json",
       "ticket": "T-06B",
-      "example_cli": "chlearn event log --type exposure --modality reading --items w_aaaaaaaaaaaa --json"
+      "example_cli": "xuezh event log --type exposure --modality reading --items w_aaaaaaaaaaaa --json"
     },
     {
       "id": "event.list",
-      "cli": "chlearn event list --since 7d --limit 200 --json",
+      "cli": "xuezh event list --since 7d --limit 200 --json",
       "schema_ok": "schemas/event.list.schema.json",
       "ticket": "T-06B",
-      "example_cli": "chlearn event list --since 7d --limit 200 --json"
+      "example_cli": "xuezh event list --since 7d --limit 200 --json"
     },
     {
       "id": "gc",
-      "cli": "chlearn gc --dry-run --json",
+      "cli": "xuezh gc --dry-run --json",
       "schema_ok": "schemas/gc.schema.json",
       "ticket": "T-02B",
-      "example_cli": "chlearn gc --dry-run --json"
+      "example_cli": "xuezh gc --dry-run --json"
     }
   ],
   "forbidden_keys": [

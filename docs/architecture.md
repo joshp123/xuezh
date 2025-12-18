@@ -7,7 +7,7 @@
 - Formats Telegram messages
 - Calls this engine via CLI
 
-### 2) `chlearn` engine (THIS repo)
+### 2) `xuezh` engine (THIS repo)
 - SQLite persistence + migrations
 - Mechanical SRS primitives (due, preview, record)
 - Bounded reports (HSK audit, mastery facts)
@@ -27,7 +27,7 @@ All commands must return either:
 - ok envelope: {ok:true, data:{...}, artifacts:[...], ...}
 - err envelope: {ok:false, error:{type,message,details}}
 
-See `src/chlearn/core/envelope.py`.
+See `src/xuezh/core/envelope.py`.
 
 ## Single-user scope
 This engine is single-user; the workspace maps to one learner profile.

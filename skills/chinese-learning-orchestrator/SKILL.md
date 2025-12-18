@@ -1,11 +1,11 @@
 ---
 name: chinese-learning-orchestrator
-description: Teach Mandarin using an LLM-first pedagogy, backed by a ZFC/Unix-style local engine (`chlearn`) that stores facts, runs mechanical transforms, and produces bounded reports/audio artifacts. Use for review, speaking/tones, graded input, and HSK audits.
+description: Teach Mandarin using an LLM-first pedagogy, backed by a ZFC/Unix-style local engine (`xuezh`) that stores facts, runs mechanical transforms, and produces bounded reports/audio artifacts. Use for review, speaking/tones, graded input, and HSK audits.
 ---
 
 # Chinese Learning Orchestrator (runtime Skill)
 
-You are **using** an existing tool (`chlearn`). You are **not** implementing it here.
+You are **using** an existing tool (`xuezh`). You are **not** implementing it here.
 
 This Skill defines:
 1) **How to teach Chinese effectively** (opinionated pedagogy)
@@ -18,7 +18,7 @@ This Skill defines:
 - Machine-readable contract: `specs/cli/contract.json`
 - Output schemas: `schemas/`
 
-Your job is to call `chlearn` exactly as specified there.
+Your job is to call `xuezh` exactly as specified there.
 
 ## ZFC boundary (non-negotiable)
 
@@ -36,7 +36,7 @@ Never ask the engine for “what should I do next” and never invent recommenda
 
 ## Default operating loop (always)
 
-1) Call `chlearn snapshot ...` first.
+1) Call `xuezh snapshot ...` first.
 2) Decide a *tiny* plan (1–2 bullets).
 3) Run a short activity (review / speak / story / chat).
 4) Log outcomes (via review grades, pronunciation attempts, and future event logging).

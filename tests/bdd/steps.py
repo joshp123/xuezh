@@ -16,19 +16,19 @@ from pytest_bdd import given, when, then, parsers
 @pytest.fixture()
 def workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     # Force engine to use temp workspace
-    monkeypatch.setenv("CHLEARN_WORKSPACE_DIR", str(tmp_path))
+    monkeypatch.setenv("XUEZH_WORKSPACE_DIR", str(tmp_path))
     return tmp_path
 
 
 def _run_cli(cmd: str, workspace: Path) -> Dict[str, Any]:
-    # cmd is a full string like: chlearn version --json
+    # cmd is a full string like: xuezh version --json
     # Allow placeholders used in BDD specs.
     cmd = cmd.replace('{workspace}', str(workspace))
     parts = shlex.split(cmd)
-    assert parts and parts[0] == "chlearn", "BDD commands must start with 'chlearn'"
+    assert parts and parts[0] == "xuezh", "BDD commands must start with 'xuezh'"
     # Execute via python -m to avoid relying on script installation
     p = subprocess.run(
-        [sys.executable, "-m", "chlearn.cli", *parts[1:]],
+        [sys.executable, "-m", "xuezh.cli", *parts[1:]],
         capture_output=True,
         text=True,
     )

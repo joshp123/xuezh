@@ -23,17 +23,17 @@ Defaults (can be overridden by env vars):
 - `cache/`: keep 180 days (or size-capped, but deterministic)
 
 Environment overrides:
-- `CHLEARN_RETENTION_ARTIFACTS_DAYS`
-- `CHLEARN_RETENTION_BACKUPS_DAYS`
-- `CHLEARN_RETENTION_EXPORTS_DAYS`
-- `CHLEARN_RETENTION_CACHE_DAYS`
+- `XUEZH_RETENTION_ARTIFACTS_DAYS`
+- `XUEZH_RETENTION_BACKUPS_DAYS`
+- `XUEZH_RETENTION_EXPORTS_DAYS`
+- `XUEZH_RETENTION_CACHE_DAYS`
 
 ## Garbage collection command
 
 The engine must provide a deterministic GC command:
 
-- `chlearn gc --dry-run --json`
-- `chlearn gc --apply --json`
+- `xuezh gc --dry-run --json`
+- `xuezh gc --apply --json`
 
 Behavior:
 - Never delete outside workspace.

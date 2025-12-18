@@ -1,6 +1,6 @@
 # agents.md — Implementation rules (read before touching code)
 
-You are implementing `chlearn`, a local Chinese learning engine used behind a Telegram bot + SOTA LLM.
+You are implementing `xuezh`, a local Chinese learning engine used behind a Telegram bot + SOTA LLM.
 
 ## North stars (must be referenced in every ticket)
 

@@ -1,6 +1,6 @@
 # CLI contract (authoritative)
 
-This document is the **single source of truth** for how the LLM Skill should call the `chlearn` engine.
+This document is the **single source of truth** for how the LLM Skill should call the `xuezh` engine.
 
 **Do not copy/paste or re-describe commands in multiple places**.
 - The Skill should link here.
@@ -24,100 +24,100 @@ All commands return one of:
 ## Commands
 
 ### version
-- `chlearn version [--json]`
+- `xuezh version [--json]`
 - command id: `version`
 
 ### snapshot
-- `chlearn snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json`
+- `xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json`
 - command id: `snapshot`
 - output schema: `schemas/snapshot.schema.json`
 
 ### db init
-- `chlearn db init --json`
+- `xuezh db init --json`
 - command id: `db.init`
 
 ### dataset import
-- `chlearn dataset import --type <hsk_vocab|hsk_chars|hsk_grammar|frequency> --path <file> --json`
+- `xuezh dataset import --type <hsk_vocab|hsk_chars|hsk_grammar|frequency> --path <file> --json`
 - command id: `dataset.import`
 - dataset format: see `specs/datasets-format.md`
 - provenance/licensing: see `specs/datasets/provenance.md`
 
 ### review start
-- `chlearn review start --limit 10 --json`
+- `xuezh review start --limit 10 --json`
 - command id: `review.start`
 - output schema: `schemas/review.start.schema.json`
 
 ### review grade
-- `chlearn review grade --item <ITEM_ID> --grade 0..5 [--next-due <ISO>] [--rule sm2|leitner] --json`
+- `xuezh review grade --item <ITEM_ID> --grade 0..5 [--next-due <ISO>] [--rule sm2|leitner] --json`
 - command id: `review.grade`
 - output schema: `schemas/review.grade.schema.json`
 
 ### review bury
-- `chlearn review bury --item <ITEM_ID> [--reason ...] --json`
+- `xuezh review bury --item <ITEM_ID> [--reason ...] --json`
 - command id: `review.bury`
 
 ### srs preview
-- `chlearn srs preview --days 14 --json`
+- `xuezh srs preview --days 14 --json`
 - command id: `srs.preview`
 
 ### report hsk
-- `chlearn report hsk --level 1..6 --window 30d --max-items 200 --max-bytes 200000 [--include-chars] --json`
+- `xuezh report hsk --level 1..6 --window 30d --max-items 200 --max-bytes 200000 [--include-chars] --json`
 - command id: `report.hsk`
 - output schema: `schemas/report.hsk.schema.json`
 
 ### report mastery
-- `chlearn report mastery --item-type word|character|grammar --window 90d --max-items 200 --max-bytes 200000 --json`
+- `xuezh report mastery --item-type word|character|grammar --window 90d --max-items 200 --max-bytes 200000 --json`
 - command id: `report.mastery`
 
 ### report due
-- `chlearn report due --limit 50 --max-bytes 200000 --json`
+- `xuezh report due --limit 50 --max-bytes 200000 --json`
 - command id: `report.due`
 
 ### audio convert
-- `chlearn audio convert --in <path> --out <path> --format wav|ogg|mp3 --json`
+- `xuezh audio convert --in <path> --out <path> --format wav|ogg|mp3 --json`
 - command id: `audio.convert`
 
 ### audio tts
-- `chlearn audio tts --text "<text>" --voice "<voice>" --out <path> --json`
+- `xuezh audio tts --text "<text>" --voice "<voice>" --out <path> --json`
 - command id: `audio.tts`
 
 ### audio stt
-- `chlearn audio stt --in <path> --json`
+- `xuezh audio stt --in <path> --json`
 - command id: `audio.stt`
 
 ### audio assess
-- `chlearn audio assess --ref-text "<text>" --in <path> --mode local|azure --json`
+- `xuezh audio assess --ref-text "<text>" --in <path> --mode local|azure --json`
 - command id: `audio.assess`
 
 ### audio process-voice
-- `chlearn audio process-voice --in <voice.ogg> --ref-text "<text>" --mode local|azure --json`
+- `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --mode local|azure --json`
 - command id: `audio.process-voice`
 - output schema: `schemas/audio.process-voice.schema.json`
 
 ### content cache put/get
-- `chlearn content cache put --type story|dialogue|exercise --key <hash> --in <file> --json`
-- `chlearn content cache get --type story|dialogue|exercise --key <hash> --json`
+- `xuezh content cache put --type story|dialogue|exercise --key <hash> --in <file> --json`
+- `xuezh content cache get --type story|dialogue|exercise --key <hash> --json`
 - command ids:
   - `content.cache.put`
   - `content.cache.get`
 
 ### doctor
-- `chlearn doctor --json`
+- `xuezh doctor --json`
 - command id: `doctor`
 
 
 ### event log
-- `chlearn event log --type <exposure|review|pronunciation_attempt|content_served> --modality <reading|listening|speaking|typing|mixed> [--items <comma_list>] [--items-file <path>] [--context <str>] --json`
+- `xuezh event log --type <exposure|review|pronunciation_attempt|content_served> --modality <reading|listening|speaking|typing|mixed> [--items <comma_list>] [--items-file <path>] [--context <str>] --json`
 - command id: `event.log`
 - output schema: `schemas/event.log.schema.json`
 
 ### event list
-- `chlearn event list --since 7d --limit 200 --json`
+- `xuezh event list --since 7d --limit 200 --json`
 - command id: `event.list`
 - output schema: `schemas/event.list.schema.json`
 
 ### gc
-- `chlearn gc --dry-run --json`
-- `chlearn gc --apply --json`
+- `xuezh gc --dry-run --json`
+- `xuezh gc --apply --json`
 - command id: `gc`
 - output schema: `schemas/gc.schema.json`

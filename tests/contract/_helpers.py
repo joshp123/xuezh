@@ -23,7 +23,7 @@ def extract_bdd_commands() -> List[str]:
     features = list(feature_dir.glob("*.feature"))
     assert features, "No .feature files found under specs/bdd"
 
-    pattern = re.compile(r'"(chlearn [^"]+)"')
+    pattern = re.compile(r'"(xuezh [^"]+)"')
     cmds: List[str] = []
     for fp in features:
         text = fp.read_text(encoding="utf-8")
@@ -33,18 +33,18 @@ def extract_bdd_commands() -> List[str]:
 
 
 def cli_to_command_id(cli: str) -> str:
-    """Mechanical parse of a `chlearn ...` invocation into a command id.
+    """Mechanical parse of a `xuezh ...` invocation into a command id.
 
     This is a structural mapping (not heuristics): it mirrors the Typer subcommand tree.
     """
     parts = shlex.split(cli)
-    assert parts and parts[0] == "chlearn", f"Expected CLI starting with 'chlearn': {cli}"
+    assert parts and parts[0] == "xuezh", f"Expected CLI starting with 'xuezh': {cli}"
 
-    # Global commands: `chlearn <cmd>`
+    # Global commands: `xuezh <cmd>`
     if len(parts) >= 2 and parts[1] in {"version", "snapshot", "doctor", "gc"}:
         return parts[1]
 
-    # Group commands: `chlearn <group> <verb>`
+    # Group commands: `xuezh <group> <verb>`
     if len(parts) < 3:
         raise AssertionError(f"Unparseable CLI (too short): {cli}")
 
@@ -54,7 +54,7 @@ def cli_to_command_id(cli: str) -> str:
     if group in {"db", "dataset", "review", "srs", "report", "audio", "event"}:
         return f"{group}.{verb}"
 
-    # Nested group: `chlearn content cache <verb>`
+    # Nested group: `xuezh content cache <verb>`
     if group == "content":
         if len(parts) < 4:
             raise AssertionError(f"Unparseable content CLI (too short): {cli}")

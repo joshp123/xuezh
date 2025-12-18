@@ -1,4 +1,4 @@
-from chlearn.core.envelope import ok, err
+from xuezh.core.envelope import ok, err
 
 
 def test_ok_envelope_shape():
