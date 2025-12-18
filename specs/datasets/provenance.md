@@ -9,6 +9,15 @@ It provides:
 
 For real datasets, choose an open-licensed source and record its version/commit hash.
 
+## Selected upstream sources (canonical)
+
+1) ivankra/hsk30 (HSK 3.0 vocab + grammar + chars)
+   - Repo: https://github.com/ivankra/hsk30
+   - License: MIT (repo)
+   - Includes: hsk30.csv (vocab), hsk30-grammar.csv (grammar), hsk30-chars.csv (chars)
+   - Default policy: use most recently ingested dataset per type (no extra CLI flags)
+   - Pin exact commit hash at import time for provenance
+
 ## Recommended open sources (examples)
 
 1) Open Language Profiles — Mandarin Chinese dataset (Zero to Hero)
