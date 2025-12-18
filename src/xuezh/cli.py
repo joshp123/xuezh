@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, datasets, db, envelope, paths, retention, snapshot as snapshot_core
+from xuezh.core import clock, datasets, db, envelope, paths, retention, snapshot as snapshot_core, srs
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -146,11 +146,15 @@ def review_start(
     limit: int = typer.Option(10, "--limit"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    now = clock.now_utc()
+    items = srs.list_due_items(limit=limit, now=now)
+    out = envelope.ok(
         command="review.start",
-        error_type="NOT_IMPLEMENTED",
-        message="review start is not implemented yet (see ticket T-06).",
-        details={"limit": limit},
+        data={
+            "items": [{"item_id": item.item_id, "due_at": item.due_at} for item in items],
+            "generated_at": now.isoformat(),
+        },
+        limits={"limit": limit},
     )
     _emit(out)
 
@@ -163,11 +167,18 @@ def review_grade(
     rule: str | None = typer.Option(None, "--rule", help="sm2|leitner"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    now = clock.now_utc()
+    due_at, applied_rule = srs.schedule_next_due(grade=grade, now=now, rule=rule, next_due=next_due)
+    srs.upsert_knowledge(item_id=item, due_at=due_at, grade=grade, now=now)
+    srs.record_review_event(
+        item_id=item,
+        event_type="review.grade",
+        payload={"grade": grade, "rule": applied_rule, "next_due": due_at},
+        now=now,
+    )
+    out = envelope.ok(
         command="review.grade",
-        error_type="NOT_IMPLEMENTED",
-        message="review grade is not implemented yet (see ticket T-06).",
-        details={"item": item, "grade": grade, "next_due": next_due, "rule": rule},
+        data={"item": item, "grade": grade, "next_due": due_at, "rule_applied": applied_rule},
     )
     _emit(out)
 
@@ -178,12 +189,16 @@ def review_bury(
     reason: str = typer.Option("unspecified", "--reason"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="review.bury",
-        error_type="NOT_IMPLEMENTED",
-        message="review bury is not implemented yet (see ticket T-06).",
-        details={"item": item, "reason": reason},
+    now = clock.now_utc()
+    due_at, _ = srs.schedule_next_due(grade=0, now=now, rule="leitner", next_due=None)
+    srs.upsert_knowledge(item_id=item, due_at=due_at, grade=None, now=now)
+    srs.record_review_event(
+        item_id=item,
+        event_type="review.bury",
+        payload={"reason": reason, "next_due": due_at},
+        now=now,
     )
+    out = envelope.ok(command="review.bury", data={"item": item, "reason": reason, "next_due": due_at})
     _emit(out)
 
 
@@ -193,12 +208,9 @@ def srs_preview(
     days: int = typer.Option(14, "--days"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="srs.preview",
-        error_type="NOT_IMPLEMENTED",
-        message="srs preview is not implemented yet (see ticket T-06).",
-        details={"days": days},
-    )
+    now = clock.now_utc()
+    forecast = srs.preview_due(days=days, now=now)
+    out = envelope.ok(command="srs.preview", data={"days": days, "forecast": forecast})
     _emit(out)
 
 
@@ -250,11 +262,12 @@ def report_due(
     max_bytes: int = typer.Option(200_000, "--max-bytes"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    now = clock.now_utc()
+    items = srs.list_due_items(limit=limit, now=now)
+    out = envelope.ok(
         command="report.due",
-        error_type="NOT_IMPLEMENTED",
-        message="report due is not implemented yet (see ticket T-06/T-07).",
-        details={"limit": limit, "max_bytes": max_bytes},
+        data={"items": [{"item_id": item.item_id, "due_at": item.due_at} for item in items]},
+        limits={"limit": limit, "max_bytes": max_bytes},
     )
     _emit(out)
 

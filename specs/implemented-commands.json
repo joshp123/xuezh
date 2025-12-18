@@ -3,5 +3,10 @@
   "gc",
   "db.init",
   "dataset.import",
-  "snapshot"
+  "snapshot",
+  "review.start",
+  "review.grade",
+  "review.bury",
+  "srs.preview",
+  "report.due"
 ]

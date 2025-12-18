@@ -76,3 +76,13 @@ def is_content_id(value: str) -> bool:
 
 def is_artifact_id(value: str) -> bool:
     return bool(ARTIFACT_ID_RE.fullmatch(value))
+
+
+def item_type(value: str) -> str | None:
+    if is_word_id(value):
+        return "word"
+    if is_grammar_id(value):
+        return "grammar"
+    if is_char_id(value):
+        return "character"
+    return None

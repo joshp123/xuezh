@@ -38,3 +38,10 @@ def test_artifact_id_valid():
 def test_event_id_ulid_format():
     value = ids.event_id_ulid()
     assert ids.is_event_id(value)
+
+
+def test_item_type_from_id():
+    assert ids.item_type("w_aaaaaaaaaaaa") == "word"
+    assert ids.item_type("g_aaaaaaaaaaaa") == "grammar"
+    assert ids.item_type("c_aaaaaaaaaaaa") == "character"
+    assert ids.item_type("bad") is None
