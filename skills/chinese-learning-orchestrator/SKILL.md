@@ -19,6 +19,7 @@ This Skill defines:
 - Output schemas: `schemas/`
 
 Your job is to call `xuezh` exactly as specified there.
+If any command returns `NOT_IMPLEMENTED`, stop and request implementation instead of guessing.
 
 ## ZFC boundary (non-negotiable)
 
@@ -156,7 +157,7 @@ Stop early unless the user explicitly asks for more.
 - pick a short phrase (<= 7 syllables)
 - generate reference audio via `audio tts`
 - user sends voice note
-- `audio process-voice ...`
+- `audio process-voice ...` (local v0 assessment uses transcript match only)
 - give 1–2 fixes, retry once
 
 ### /story style
@@ -169,3 +170,30 @@ Stop early unless the user explicitly asks for more.
 - Prefer multiple short messages to one huge wall.
 - Use bold sparingly.
 - Always end with “Next time (tiny): …”
+
+## Copy/paste examples (verified commands only)
+
+### Snapshot + HSK audit
+```
+xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json
+xuezh report hsk --level 3 --window 30d --max-items 50 --max-bytes 200000 --json
+```
+
+### Review loop
+```
+xuezh review start --limit 5 --json
+xuezh review grade --item w_aaaaaaaaaaaa --grade 4 --next-due 2025-01-02T03:04:05+00:00 --json
+```
+
+### Speaking loop (Telegram voice note)
+```
+xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out {workspace}/artifacts/tts.ogg --backend edge-tts --json
+xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text "你好" --backend local --json
+```
+
+### Content cache + logging
+```
+xuezh content cache put --type story --key abc123 --in tests/fixtures/content/story_min.txt --json
+xuezh content cache get --type story --key abc123 --json
+xuezh event log --type content_served --modality reading --items w_aaaaaaaaaaaa --context "story:abc123" --json
+```
