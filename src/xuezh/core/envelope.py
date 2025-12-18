@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from typing import Any, Dict, List, Optional
 
+from xuezh.core.error_types import assert_known_error_type
+
 
 @dataclass
 class Artifact:
@@ -40,6 +42,7 @@ def err(
     details: Dict[str, Any] | None = None,
     schema_version: str = "1",
 ) -> Dict[str, Any]:
+    assert_known_error_type(error_type)
     return {
         "ok": False,
         "schema_version": schema_version,

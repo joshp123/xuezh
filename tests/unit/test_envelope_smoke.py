@@ -10,6 +10,6 @@ def test_ok_envelope_shape():
 
 
 def test_err_envelope_shape():
-    out = err(command="x", error_type="E", message="m")
+    out = err(command="x", error_type="NOT_IMPLEMENTED", message="m")
     assert out["ok"] is False
-    assert out["error"]["type"] == "E"
+    assert out["error"]["type"] == "NOT_IMPLEMENTED"

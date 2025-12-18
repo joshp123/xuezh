@@ -33,11 +33,15 @@ def _run_cli(cmd: str, workspace: Path) -> Dict[str, Any]:
         capture_output=True,
         text=True,
     )
-    assert p.returncode == 0, f"Non-zero exit code: {p.returncode}\nSTDERR: {p.stderr}"
     try:
-        return json.loads(p.stdout)
+        out = json.loads(p.stdout)
     except Exception as e:  # pragma: no cover
         raise AssertionError(f"CLI did not return JSON. Output:\n{p.stdout}") from e
+    if out.get("ok") is True:
+        assert p.returncode == 0, f"Expected exit 0 for ok envelope, got {p.returncode}\nSTDERR: {p.stderr}"
+    else:
+        assert p.returncode != 0, f"Expected non-zero exit for err envelope, got {p.returncode}\nSTDERR: {p.stderr}"
+    return out
 
 
 def _load_schema(name: str) -> Dict[str, Any]:

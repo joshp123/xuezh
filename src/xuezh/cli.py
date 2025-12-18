@@ -7,6 +7,14 @@ from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
 
+
+def _emit(out: dict) -> None:
+    typer.echo(dumps(out))
+    if out.get("ok") is True:
+        raise typer.Exit(code=0)
+    raise typer.Exit(code=1)
+
+
 # ---- Sub-apps (public CLI contract) ----
 db_app = typer.Typer(add_completion=False)
 dataset_app = typer.Typer(add_completion=False)
@@ -31,9 +39,8 @@ app.add_typer(event_app, name="event")
 @app.command()
 def version(json_output: bool = typer.Option(False, "--json", help="Output JSON envelope")):
     if json_output:
-        typer.echo(dumps(envelope.ok(command="version", data={"version": "0.1.0"})))
-    else:
-        typer.echo("xuezh 0.1.0")
+        _emit(envelope.ok(command="version", data={"version": "0.1.0"}))
+    typer.echo("xuezh 0.1.0")
 
 
 @app.command()
@@ -56,7 +63,7 @@ def snapshot(
             "max_bytes": max_bytes,
         },
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @app.command()
@@ -67,7 +74,7 @@ def doctor(json_output: bool = typer.Option(True, "--json")):
         message="doctor is not implemented yet (see ticket T-14).",
         details={},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @app.command()
@@ -82,7 +89,7 @@ def gc(
         message="gc is not implemented yet (see ticket T-02B).",
         details={"apply": apply, "dry_run": dry_run},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # ---------------- db ----------------
@@ -94,7 +101,7 @@ def db_init(json_output: bool = typer.Option(True, "--json")):
         message="db init is not implemented yet (see ticket T-03).",
         details={},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- dataset --------------
@@ -110,7 +117,7 @@ def dataset_import(
         message="dataset import is not implemented yet (see ticket T-04).",
         details={"type": type, "path": path},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- review --------------
@@ -125,7 +132,7 @@ def review_start(
         message="review start is not implemented yet (see ticket T-06).",
         details={"limit": limit},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @review_app.command("grade")
@@ -142,7 +149,7 @@ def review_grade(
         message="review grade is not implemented yet (see ticket T-06).",
         details={"item": item, "grade": grade, "next_due": next_due, "rule": rule},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @review_app.command("bury")
@@ -157,7 +164,7 @@ def review_bury(
         message="review bury is not implemented yet (see ticket T-06).",
         details={"item": item, "reason": reason},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- srs --------------
@@ -172,7 +179,7 @@ def srs_preview(
         message="srs preview is not implemented yet (see ticket T-06).",
         details={"days": days},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- report --------------
@@ -197,7 +204,7 @@ def report_hsk(
             "include_chars": include_chars,
         },
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @report_app.command("mastery")
@@ -214,7 +221,7 @@ def report_mastery(
         message="report mastery is not implemented yet (see ticket T-07).",
         details={"item_type": item_type, "window": window, "max_items": max_items, "max_bytes": max_bytes},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @report_app.command("due")
@@ -229,7 +236,7 @@ def report_due(
         message="report due is not implemented yet (see ticket T-06/T-07).",
         details={"limit": limit, "max_bytes": max_bytes},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- audio --------------
@@ -247,7 +254,7 @@ def audio_convert(
         message="audio convert is not implemented yet (see ticket T-08).",
         details={"in": in_path, "out": out_path, "format": format, "backend": backend},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @audio_app.command("tts")
@@ -264,7 +271,7 @@ def audio_tts(
         message="audio tts is not implemented yet (see ticket T-08).",
         details={"text": text, "voice": voice, "out": out_path, "backend": backend},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @audio_app.command("stt")
@@ -279,7 +286,7 @@ def audio_stt(
         message="audio stt is not implemented yet (see ticket T-09).",
         details={"in": in_path, "backend": backend},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @audio_app.command("assess")
@@ -295,7 +302,7 @@ def audio_assess(
         message="audio assess is not implemented yet (see ticket T-10).",
         details={"ref_text": ref_text, "in": in_path, "backend": backend},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @audio_app.command("process-voice")
@@ -311,7 +318,7 @@ def audio_process_voice(
         message="audio process-voice is not implemented yet (see ticket T-10).",
         details={"in": in_path, "ref_text": ref_text, "backend": backend},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- event --------------
@@ -330,7 +337,7 @@ def event_log(
         message="event log is not implemented yet (see ticket T-06B).",
         details={"type": type, "modality": modality, "items": items, "items_file": items_file, "context": context},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @event_app.command("list")
@@ -345,7 +352,7 @@ def event_list(
         message="event list is not implemented yet (see ticket T-06B).",
         details={"since": since, "limit": limit},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 # -------------- content --------------
@@ -366,7 +373,7 @@ def cache_put(
         message="content cache put is not implemented yet (see ticket T-11).",
         details={"type": type, "key": key, "in": in_path},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 @cache_app.command("get")
@@ -381,7 +388,7 @@ def cache_get(
         message="content cache get is not implemented yet (see ticket T-11).",
         details={"type": type, "key": key},
     )
-    typer.echo(dumps(out))
+    _emit(out)
 
 
 if __name__ == "__main__":

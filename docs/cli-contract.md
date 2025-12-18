@@ -13,6 +13,7 @@ This document is the **single source of truth** for how the LLM Skill should cal
 
 - Single-user system (no multi-user semantics).
 - Every command supports `--json` and returns a JSON envelope.
+- Exit codes: `ok:true` => 0, `ok:false` => non-zero (policy: `specs/errors.md`).
 - No command ever returns recommendations (ZFC): no `recommended_next`, no `priority_score`, etc.
 - Outputs are bounded by `--limit` and/or `--max-bytes`. When exceeding bounds, spill to an artifact file and return a handle/path.
 
