@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import os
+import shutil
+import sqlite3
 import typer
 
 from xuezh.core import (
@@ -88,12 +91,52 @@ def snapshot(
 
 @app.command()
 def doctor(json_output: bool = typer.Option(True, "--json")):
-    out = envelope.err(
-        command="doctor",
-        error_type="NOT_IMPLEMENTED",
-        message="doctor is not implemented yet (see ticket T-14).",
-        details={},
+    workspace = paths.workspace_dir()
+    db_path = paths.db_path()
+
+    checks: list[dict] = []
+
+    checks.append(
+        {
+            "name": "workspace.path",
+            "ok": True,
+            "details": {
+                "path": str(workspace),
+                "exists": workspace.exists(),
+                "override": os.environ.get("XUEZH_WORKSPACE_DIR"),
+            },
+        }
     )
+
+    db_exists = db_path.exists()
+    db_details = {"path": str(db_path), "exists": db_exists, "override": os.environ.get("XUEZH_DB_PATH")}
+    if db_exists:
+        try:
+            conn = sqlite3.connect(db_path)
+            try:
+                row = conn.execute("SELECT COUNT(*) FROM schema_migrations").fetchone()
+                db_details["schema_migrations"] = int(row[0]) if row else 0
+            finally:
+                conn.close()
+        except sqlite3.Error as exc:
+            db_details["error"] = str(exc)
+            checks.append({"name": "db.status", "ok": False, "details": db_details})
+        else:
+            checks.append({"name": "db.status", "ok": True, "details": db_details})
+    else:
+        checks.append({"name": "db.status", "ok": False, "details": db_details})
+
+    for tool in ("ffmpeg", "edge-tts", "whisper"):
+        path = shutil.which(tool)
+        checks.append(
+            {
+                "name": f"tool.{tool}",
+                "ok": path is not None,
+                "details": {"path": path},
+            }
+        )
+
+    out = envelope.ok(command="doctor", data={"checks": checks})
     _emit(out)
 
 

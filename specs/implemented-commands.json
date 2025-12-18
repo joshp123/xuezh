@@ -19,5 +19,6 @@
   "audio.assess",
   "audio.process-voice",
   "content.cache.put",
-  "content.cache.get"
+  "content.cache.get",
+  "doctor"
 ]
