@@ -49,7 +49,14 @@ Scope:
 - `tests/contract/test_contract_coverage.py` and `tests/contract/test_contract_bdd_sync.py` ensure BDD commands, schemas, and the machine-readable contract stay aligned.
 
 ## Strict BDD mode
-Set `XUEZH_STRICT_BDD=1` to make BDD scenarios fail instead of xfail when commands are unimplemented.
+The BDD suite is intentionally runnable before all commands are implemented.
+
+Mechanisms:
+- `specs/implemented-commands.json` (authoritative list of command ids that must be implemented)
+  - If a command is listed there and still returns `NOT_IMPLEMENTED`, tests **fail**.
+  - Add command ids to this list in the same commit as the implementation that makes them pass.
+- `XUEZH_STRICT_BDD=1`
+  - Never xfail on `NOT_IMPLEMENTED` (useful for \"everything should be implemented\" checks).
 
 ## No skipped tests
 Skipped tests are forbidden and enforced by `tests/conftest.py`. Use xfail if truly necessary.

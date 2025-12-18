@@ -11,6 +11,8 @@ import pytest
 import jsonschema
 from pytest_bdd import given, when, then, parsers
 
+from tests.bdd.ratchet import load_implemented_commands, should_xfail_not_implemented
+
 
 @pytest.fixture()
 def workspace(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
@@ -88,7 +90,12 @@ def then_valid_envelope(when_client_runs: Dict[str, Any]) -> None:
 def then_ok_or_xfail(when_client_runs: Dict[str, Any]) -> None:
     if when_client_runs.get("ok") is not True:
         err = when_client_runs.get("error", {})
-        if err.get("type") == "NOT_IMPLEMENTED":
+        implemented = load_implemented_commands()
+        if should_xfail_not_implemented(
+            command=when_client_runs.get("command"),
+            error_type=err.get("type"),
+            implemented=implemented,
+        ):
             pytest.xfail("Command not implemented yet")
         raise AssertionError(f"Expected ok=true, got error: {err}")
 
@@ -97,7 +104,12 @@ def then_ok_or_xfail(when_client_runs: Dict[str, Any]) -> None:
 def then_schema_or_xfail(when_client_runs: Dict[str, Any]) -> None:
     if when_client_runs.get("ok") is not True:
         err = when_client_runs.get("error", {})
-        if err.get("type") == "NOT_IMPLEMENTED":
+        implemented = load_implemented_commands()
+        if should_xfail_not_implemented(
+            command=when_client_runs.get("command"),
+            error_type=err.get("type"),
+            implemented=implemented,
+        ):
             pytest.xfail("Command not implemented yet")
         raise AssertionError(f"Expected ok=true, got error: {err}")
     _validate_command_schema(when_client_runs)
