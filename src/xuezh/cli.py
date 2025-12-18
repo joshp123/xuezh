@@ -391,12 +391,42 @@ def audio_stt(
     backend: str = typer.Option("whisper", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="audio.stt",
-        error_type="NOT_IMPLEMENTED",
-        message="audio stt is not implemented yet (see ticket T-09).",
-        details={"in": in_path, "backend": backend},
-    )
+    try:
+        result = audio.stt_audio(in_path=in_path, backend=backend)
+        out = envelope.ok(
+            command="audio.stt",
+            data=result.data,
+            artifacts=result.artifacts,
+            truncated=result.truncated,
+            limits=result.limits,
+        )
+    except ToolMissingError as exc:
+        out = envelope.err(
+            command="audio.stt",
+            error_type="TOOL_MISSING",
+            message=str(exc),
+            details={"tool": exc.tool, "in": in_path, "backend": backend},
+        )
+    except ProcessFailedError as exc:
+        out = envelope.err(
+            command="audio.stt",
+            error_type="BACKEND_FAILED",
+            message="audio backend failed during transcription",
+            details={
+                "cmd": exc.cmd,
+                "returncode": exc.returncode,
+                "stderr": _trim(exc.stderr),
+                "in": in_path,
+                "backend": backend,
+            },
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        out = envelope.err(
+            command="audio.stt",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"in": in_path, "backend": backend},
+        )
     _emit(out)
 
 

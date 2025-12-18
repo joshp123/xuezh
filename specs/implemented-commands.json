@@ -14,5 +14,6 @@
   "report.hsk",
   "report.mastery",
   "audio.convert",
-  "audio.tts"
+  "audio.tts",
+  "audio.stt"
 ]

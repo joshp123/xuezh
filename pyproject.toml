@@ -13,6 +13,7 @@ dependencies = [
   "pydantic-settings>=2.2.1",
   "ulid-py>=1.1.0",
   "edge-tts>=6.0.0",
+  "openai-whisper>=20231117",
 ]
 
 [project.optional-dependencies]
