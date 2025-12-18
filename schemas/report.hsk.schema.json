@@ -29,7 +29,10 @@
       ],
       "properties": {
         "level": {
-          "type": "integer"
+          "type": [
+            "integer",
+            "string"
+          ]
         },
         "coverage": {
           "type": "object",
@@ -39,13 +42,163 @@
           ],
           "properties": {
             "vocab": {
-              "type": "object"
+              "type": "object",
+              "required": [
+                "total",
+                "known",
+                "unknown",
+                "coverage_pct"
+              ],
+              "properties": {
+                "total": {
+                  "type": "integer"
+                },
+                "known": {
+                  "type": "integer"
+                },
+                "unknown": {
+                  "type": "integer"
+                },
+                "coverage_pct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
             },
             "grammar": {
-              "type": "object"
+              "type": "object",
+              "required": [
+                "total",
+                "known",
+                "unknown",
+                "coverage_pct"
+              ],
+              "properties": {
+                "total": {
+                  "type": "integer"
+                },
+                "known": {
+                  "type": "integer"
+                },
+                "unknown": {
+                  "type": "integer"
+                },
+                "coverage_pct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
             },
             "chars": {
-              "type": "object"
+              "type": "object",
+              "required": [
+                "total",
+                "known",
+                "unknown",
+                "coverage_pct"
+              ],
+              "properties": {
+                "total": {
+                  "type": "integer"
+                },
+                "known": {
+                  "type": "integer"
+                },
+                "unknown": {
+                  "type": "integer"
+                },
+                "coverage_pct": {
+                  "type": "number"
+                }
+              },
+              "additionalProperties": true
+            }
+          },
+          "additionalProperties": true
+        },
+        "counts_by_level": {
+          "type": "object",
+          "properties": {
+            "vocab": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "total",
+                  "known",
+                  "unknown",
+                  "coverage_pct"
+                ],
+                "properties": {
+                  "total": {
+                    "type": "integer"
+                  },
+                  "known": {
+                    "type": "integer"
+                  },
+                  "unknown": {
+                    "type": "integer"
+                  },
+                  "coverage_pct": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "grammar": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "total",
+                  "known",
+                  "unknown",
+                  "coverage_pct"
+                ],
+                "properties": {
+                  "total": {
+                    "type": "integer"
+                  },
+                  "known": {
+                    "type": "integer"
+                  },
+                  "unknown": {
+                    "type": "integer"
+                  },
+                  "coverage_pct": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              }
+            },
+            "chars": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": [
+                  "total",
+                  "known",
+                  "unknown",
+                  "coverage_pct"
+                ],
+                "properties": {
+                  "total": {
+                    "type": "integer"
+                  },
+                  "known": {
+                    "type": "integer"
+                  },
+                  "unknown": {
+                    "type": "integer"
+                  },
+                  "coverage_pct": {
+                    "type": "number"
+                  }
+                },
+                "additionalProperties": true
+              }
             }
           },
           "additionalProperties": true

@@ -7,7 +7,7 @@
   - **vocabulary (words)**
   - **grammar points**
 - Characters are **optional**:
-  - can be included if `--include-chars` and `hsk_chars` dataset exists
+  - included only if `--include-chars` and `hsk_chars` dataset exists
   - otherwise omitted
 
 Rationale:
@@ -16,8 +16,13 @@ Rationale:
 
 ## Hold point (requires user sign-off)
 Before implementing `report.hsk`, the agent must:
-1) show a sample output JSON structure using fixture datasets
+1) show a sample output JSON structure using **real datasets**
 2) confirm with the user whether to:
    - keep chars optional
    - drop chars entirely
    - include chars by default
+
+## Approved decisions (2025-12-18)
+- Chars are **optional** (only included with `--include-chars`)
+- `level` may be a string to preserve upstream values like `"7-9"`
+- Coverage and counts include **known/unknown** splits per level
