@@ -7,8 +7,8 @@ from __future__ import annotations
 
 import pytest
 
-# Import pytest-bdd step definitions
-from tests.bdd import steps  # noqa: F401
+# Register pytest-bdd step definitions as a pytest plugin so fixtures are discoverable.
+pytest_plugins = ["tests.bdd.steps"]
 
 _SKIP_COUNT = 0
 

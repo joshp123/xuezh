@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from tests.contract._helpers import (
     cli_to_command_id,
     extract_bdd_commands,

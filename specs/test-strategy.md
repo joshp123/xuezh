@@ -46,7 +46,7 @@ Scope:
   - integration: assert forbidden keys absent in outputs
 
 ## Contract sync
-- `tests/contract/test_contract_sync.py` ensures BDD commands, schemas, and the machine-readable contract stay aligned.
+- `tests/contract/test_contract_coverage.py` and `tests/contract/test_contract_bdd_sync.py` ensure BDD commands, schemas, and the machine-readable contract stay aligned.
 
 ## Strict BDD mode
 Set `XUEZH_STRICT_BDD=1` to make BDD scenarios fail instead of xfail when commands are unimplemented.

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import shlex
 import subprocess
 import sys
@@ -72,7 +71,7 @@ def given_clean_workspace(workspace: Path) -> None:
     assert workspace.exists()
 
 
-@when(parsers.parse('the client runs "{cmd}"'))
+@when(parsers.parse('the client runs "{cmd}"'), target_fixture="when_client_runs")
 def when_client_runs(cmd: str, workspace: Path) -> Dict[str, Any]:
     out = _run_cli(cmd, workspace)
     _validate_envelope(out)
