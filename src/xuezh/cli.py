@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, db, envelope, paths, retention
+from xuezh.core import clock, datasets, db, envelope, paths, retention
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -130,11 +130,10 @@ def dataset_import(
     path: str = typer.Option(..., "--path"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    dataset_id, rows_loaded = datasets.import_dataset(type, path)
+    out = envelope.ok(
         command="dataset.import",
-        error_type="NOT_IMPLEMENTED",
-        message="dataset import is not implemented yet (see ticket T-04).",
-        details={"type": type, "path": path},
+        data={"type": type, "rows_loaded": rows_loaded, "dataset_id": dataset_id},
     )
     _emit(out)
 
