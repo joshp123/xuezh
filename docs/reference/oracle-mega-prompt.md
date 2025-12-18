@@ -1,3 +1,12 @@
+# NOT A SPEC (reference/background)
+#
+# This file is preserved as background context and historical notes.
+# Authoritative requirements live in:
+# - `docs/cli-contract.md`
+# - `specs/cli/contract.json`
+# - `schemas/`
+# - `specs/bdd/`
+
 # Comprehensive Language Learning System Design Request
 
 ## Project Overview

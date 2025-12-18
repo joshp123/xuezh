@@ -75,6 +75,9 @@ See `agents.md`.
 ## Authoritative CLI spec
 See `docs/cli-contract.md`.
 
+## Documentation map
+See `docs/README.md` for what is authoritative vs background/reference.
+
 ## Out of scope (v1)
 See `specs/out-of-scope.md`.
 

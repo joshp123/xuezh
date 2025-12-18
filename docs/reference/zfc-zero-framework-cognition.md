@@ -1,3 +1,10 @@
+# NOT A SPEC (reference/background)
+#
+# This file explains ZFC and is preserved as background context.
+# Authoritative repo constraints are summarized in:
+# - `specs/invariants.md`
+# - `docs/architecture.md`
+
 # Zero Framework Cognition (ZFC)
 
 > **Source**: Steve Yegge, October 22, 2025
