@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio.tts ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "audio.tts"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "text",
+        "voice"
+      ],
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "voice": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

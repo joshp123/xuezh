@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "db.init ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "db.init"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "db_path"
+      ],
+      "properties": {
+        "db_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

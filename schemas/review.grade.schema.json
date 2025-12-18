@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "review.grade ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "review.grade"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "item",
+        "grade"
+      ]
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

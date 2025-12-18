@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio.assess ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "audio.assess"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "ref_text",
+        "in",
+        "assessment"
+      ],
+      "properties": {
+        "ref_text": {
+          "type": "string"
+        },
+        "in": {
+          "type": "string"
+        },
+        "assessment": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

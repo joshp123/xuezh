@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "chlearn ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "mime",
+          "purpose"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

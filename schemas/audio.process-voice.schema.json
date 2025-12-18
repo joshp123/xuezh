@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "audio.process-voice ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "audio.process-voice"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "ref_text"
+      ],
+      "properties": {
+        "ref_text": {
+          "type": "string"
+        },
+        "artifacts_index": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "path",
+          "mime",
+          "purpose"
+        ],
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "bytes": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "purpose": {
+                "const": "normalized_input"
+              }
+            },
+            "required": [
+              "purpose"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "purpose": {
+                "const": "transcript"
+              }
+            },
+            "required": [
+              "purpose"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "purpose": {
+                "const": "assessment"
+              }
+            },
+            "required": [
+              "purpose"
+            ]
+          }
+        },
+        {
+          "contains": {
+            "type": "object",
+            "properties": {
+              "purpose": {
+                "const": "feedback_voice_note"
+              }
+            },
+            "required": [
+              "purpose"
+            ]
+          }
+        }
+      ]
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

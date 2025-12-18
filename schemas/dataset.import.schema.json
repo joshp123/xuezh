@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "dataset.import ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "dataset.import"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "type",
+        "rows_loaded"
+      ],
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "rows_loaded": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

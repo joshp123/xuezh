@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "snapshot ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "snapshot"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "generated_at",
+        "recent_events",
+        "window"
+      ],
+      "properties": {
+        "generated_at": {
+          "type": "string"
+        },
+        "window": {
+          "type": "string"
+        },
+        "recent_events": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        },
+        "exposure_counts": {
+          "type": "object"
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

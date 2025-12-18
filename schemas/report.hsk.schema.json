@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "report.hsk ok envelope",
+  "type": "object",
+  "required": [
+    "ok",
+    "schema_version",
+    "command",
+    "data",
+    "artifacts",
+    "truncated",
+    "limits"
+  ],
+  "properties": {
+    "ok": {
+      "const": true
+    },
+    "schema_version": {
+      "type": "string"
+    },
+    "command": {
+      "const": "report.hsk"
+    },
+    "data": {
+      "type": "object",
+      "required": [
+        "level",
+        "coverage"
+      ],
+      "properties": {
+        "level": {
+          "type": "integer"
+        },
+        "coverage": {
+          "type": "object",
+          "required": [
+            "vocab",
+            "grammar"
+          ],
+          "properties": {
+            "vocab": {
+              "type": "object"
+            },
+            "grammar": {
+              "type": "object"
+            },
+            "chars": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": true
+    },
+    "artifacts": {
+      "type": "array"
+    },
+    "truncated": {
+      "type": "boolean"
+    },
+    "limits": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}
