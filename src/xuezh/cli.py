@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, envelope, paths, retention
+from xuezh.core import clock, db, envelope, paths, retention
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -118,12 +118,8 @@ def gc(
 # ---------------- db ----------------
 @db_app.command("init")
 def db_init(json_output: bool = typer.Option(True, "--json")):
-    out = envelope.err(
-        command="db.init",
-        error_type="NOT_IMPLEMENTED",
-        message="db init is not implemented yet (see ticket T-03).",
-        details={},
-    )
+    db_path = db.init_db()
+    out = envelope.ok(command="db.init", data={"db_path": str(db_path)})
     _emit(out)
 
 
