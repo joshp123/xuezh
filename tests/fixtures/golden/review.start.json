@@ -1,0 +1,19 @@
+{
+  "artifacts": [],
+  "command": "review.start",
+  "data": {
+    "generated_at": "2025-01-02T03:04:05+00:00",
+    "items": [
+      {
+        "due_at": "2025-01-02T03:04:05+00:00",
+        "item_id": "w_0fafdf1e6a67"
+      }
+    ]
+  },
+  "limits": {
+    "limit": 10
+  },
+  "ok": true,
+  "schema_version": "1",
+  "truncated": false
+}

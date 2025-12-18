@@ -1,0 +1,49 @@
+{
+  "artifacts": [],
+  "command": "snapshot",
+  "data": {
+    "counts_by_level": {
+      "chars": {
+        "1": 2,
+        "2": 1,
+        "3": 2
+      },
+      "grammar": {
+        "2": 1,
+        "3": 1
+      },
+      "vocab": {
+        "1": 2,
+        "2": 1,
+        "3": 2
+      }
+    },
+    "due_counts_by_day": {},
+    "due_items": [],
+    "exposure_counts": {},
+    "generated_at": "2025-01-02T03:04:05+00:00",
+    "hsk_summary": {
+      "chars": {
+        "total": 5
+      },
+      "grammar": {
+        "total": 2
+      },
+      "vocab": {
+        "total": 5
+      }
+    },
+    "limits": {
+      "due_limit": 80,
+      "evidence_limit": 200
+    },
+    "recent_events": [],
+    "window": "30d"
+  },
+  "limits": {
+    "max_bytes": 200000
+  },
+  "ok": true,
+  "schema_version": "1",
+  "truncated": false
+}

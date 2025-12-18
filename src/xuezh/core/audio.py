@@ -393,7 +393,7 @@ def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceR
     ]
     artifacts_index = {artifact.purpose: artifact.path for artifact in artifacts}
     summary = {"assessment": assessment, "artifacts_index": artifacts_index}
-    attempt_id = _store_pronunciation_attempt(
+    _store_pronunciation_attempt(
         backend_id=backend,
         artifacts=artifacts,
         summary=summary,
@@ -403,6 +403,5 @@ def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceR
         "ref_text": ref_text,
         "backend": {"id": backend, "features": ["assessment", "tts", "stt", "convert"]},
         "artifacts_index": artifacts_index,
-        "attempt_id": attempt_id,
     }
     return ProcessVoiceResult(data=data, artifacts=artifacts)

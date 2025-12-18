@@ -1,0 +1,51 @@
+{
+  "artifacts": [
+    {
+      "bytes": 32078,
+      "mime": "audio/wav",
+      "path": "artifacts/2025/01/02/normalized-input-20250102T030405Z.wav",
+      "purpose": "normalized_input"
+    },
+    {
+      "bytes": 55,
+      "mime": "application/json",
+      "path": "artifacts/2025/01/02/stt-normalized-input-20250102T030405Z-20250102T030405Z.json",
+      "purpose": "transcript"
+    },
+    {
+      "bytes": 110,
+      "mime": "application/json",
+      "path": "artifacts/2025/01/02/assessment-20250102T030405Z.json",
+      "purpose": "assessment"
+    },
+    {
+      "bytes": 2966,
+      "mime": "audio/ogg",
+      "path": "artifacts/2025/01/02/feedback-voice-20250102T030405Z.ogg",
+      "purpose": "feedback_voice_note"
+    }
+  ],
+  "command": "audio.process-voice",
+  "data": {
+    "artifacts_index": {
+      "assessment": "artifacts/2025/01/02/assessment-20250102T030405Z.json",
+      "feedback_voice_note": "artifacts/2025/01/02/feedback-voice-20250102T030405Z.ogg",
+      "normalized_input": "artifacts/2025/01/02/normalized-input-20250102T030405Z.wav",
+      "transcript": "artifacts/2025/01/02/stt-normalized-input-20250102T030405Z-20250102T030405Z.json"
+    },
+    "backend": {
+      "features": [
+        "assessment",
+        "tts",
+        "stt",
+        "convert"
+      ],
+      "id": "local"
+    },
+    "ref_text": "你好"
+  },
+  "limits": {},
+  "ok": true,
+  "schema_version": "1",
+  "truncated": false
+}
