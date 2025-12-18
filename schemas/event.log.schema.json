@@ -32,7 +32,8 @@
       ],
       "properties": {
         "event_id": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^(ev_[0-9A-Z]{26}|ev_[0-9a-f]{32})$"
         },
         "event_type": {
           "type": "string"
@@ -46,7 +47,8 @@
         "items": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^[wgc]_[0-9a-f]{12}$"
           }
         },
         "context": {

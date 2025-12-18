@@ -36,7 +36,8 @@
           "type": "string"
         },
         "content_id": {
-          "type": "string"
+          "type": "string",
+          "pattern": "^ct_[0-9a-f]{12}$"
         }
       },
       "additionalProperties": true
