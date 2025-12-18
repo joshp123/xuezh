@@ -15,5 +15,7 @@
   "report.mastery",
   "audio.convert",
   "audio.tts",
-  "audio.stt"
+  "audio.stt",
+  "audio.assess",
+  "audio.process-voice"
 ]

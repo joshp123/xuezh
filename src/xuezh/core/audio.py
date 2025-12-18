@@ -7,7 +7,7 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 
-from xuezh.core import clock, jsonio, paths
+from xuezh.core import clock, db, jsonio, paths
 from xuezh.core.envelope import Artifact
 from xuezh.core.process import ensure_tool, run_checked
 
@@ -40,6 +40,18 @@ class SttResult:
     artifacts: list[Artifact]
     truncated: bool
     limits: dict
+
+
+@dataclass(frozen=True)
+class AssessResult:
+    data: dict
+    artifacts: list[Artifact]
+
+
+@dataclass(frozen=True)
+class ProcessVoiceResult:
+    data: dict
+    artifacts: list[Artifact]
 
 
 def build_convert_command(in_path: Path, out_path: Path, fmt: str) -> list[str]:
@@ -128,7 +140,14 @@ def _extract_transcript(raw: dict) -> dict:
     return transcript
 
 
-def convert_audio(*, in_path: str, out_path: str, fmt: str, backend: str) -> AudioResult:
+def convert_audio(
+    *,
+    in_path: str,
+    out_path: str,
+    fmt: str,
+    backend: str,
+    purpose: str = "converted_audio",
+) -> AudioResult:
     if backend != "ffmpeg":
         raise ValueError(f"Unsupported backend: {backend}")
 
@@ -143,7 +162,7 @@ def convert_audio(*, in_path: str, out_path: str, fmt: str, backend: str) -> Aud
     cmd = build_convert_command(input_path, output_path, fmt)
     run_checked(cmd)
 
-    artifact = _artifact_for(output_path, fmt, "converted_audio")
+    artifact = _artifact_for(output_path, fmt, purpose)
     data = {
         "in": str(input_path),
         "out": artifact.path,
@@ -153,7 +172,14 @@ def convert_audio(*, in_path: str, out_path: str, fmt: str, backend: str) -> Aud
     return AudioResult(data=data, artifacts=[artifact])
 
 
-def tts_audio(*, text: str, voice: str, out_path: str, backend: str) -> AudioResult:
+def tts_audio(
+    *,
+    text: str,
+    voice: str,
+    out_path: str,
+    backend: str,
+    purpose: str = "tts_audio",
+) -> AudioResult:
     if backend != "edge-tts":
         raise ValueError(f"Unsupported backend: {backend}")
 
@@ -177,7 +203,7 @@ def tts_audio(*, text: str, voice: str, out_path: str, backend: str) -> AudioRes
         if temp_path.exists():
             temp_path.unlink()
 
-    artifact = _artifact_for(output_path, fmt, "tts_audio")
+    artifact = _artifact_for(output_path, fmt, purpose)
     data = {
         "text": text,
         "voice": resolved_voice,
@@ -248,3 +274,135 @@ def stt_audio(*, in_path: str, backend: str, max_bytes: int = 200_000) -> SttRes
         return SttResult(data=data, artifacts=[artifact], truncated=True, limits=limits)
 
     return SttResult(data=data, artifacts=[artifact], truncated=False, limits=limits)
+
+
+def _normalize_text(text: str) -> str:
+    return "".join(text.strip().split()).lower()
+
+
+def assess_from_transcript(ref_text: str, transcript_text: str) -> dict:
+    ref_norm = _normalize_text(ref_text)
+    transcript_norm = _normalize_text(transcript_text)
+    return {
+        "ref_text": ref_text,
+        "transcript_text": transcript_text,
+        "exact_match": ref_norm == transcript_norm,
+        "note": "local_v0_placeholder",
+    }
+
+
+def assess_audio(*, ref_text: str, in_path: str, backend: str) -> AssessResult:
+    if backend != "local":
+        raise ValueError(f"Unsupported backend: {backend}")
+
+    stt_result = stt_audio(in_path=in_path, backend="whisper")
+    transcript_text = stt_result.data.get("transcript", {}).get("text", "")
+    assessment = assess_from_transcript(ref_text, transcript_text)
+
+    now = clock.now_utc()
+    assessment_path = _artifact_path("assessment", "json", now)
+    assessment_path.write_text(jsonio.dumps(assessment), encoding="utf-8")
+    assessment_artifact = Artifact(
+        path=str(assessment_path.relative_to(paths.ensure_workspace())),
+        mime="application/json",
+        purpose="assessment",
+        bytes=assessment_path.stat().st_size,
+    )
+
+    data = {
+        "ref_text": ref_text,
+        "in": str(Path(in_path).expanduser()),
+        "assessment": assessment,
+        "backend": {"id": backend, "features": ["assessment"]},
+    }
+    artifacts = [assessment_artifact, *stt_result.artifacts]
+    return AssessResult(data=data, artifacts=artifacts)
+
+
+def _store_pronunciation_attempt(
+    *,
+    backend_id: str,
+    artifacts: list[Artifact],
+    summary: dict,
+) -> str:
+    import sqlite3
+    import ulid
+
+    attempt_id = str(ulid.new())
+    db_path = db.init_db()
+    conn = sqlite3.connect(db_path)
+    try:
+        conn.execute(
+            """
+            INSERT INTO pronunciation_attempts (id, item_id, ts, backend_id, artifacts_json, summary_json)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (
+                attempt_id,
+                None,
+                clock.now_utc().isoformat(),
+                backend_id,
+                json.dumps([asdict(a) for a in artifacts], ensure_ascii=False, sort_keys=True),
+                json.dumps(summary, ensure_ascii=False, sort_keys=True),
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+    return attempt_id
+
+
+def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceResult:
+    if backend != "local":
+        raise ValueError(f"Unsupported backend: {backend}")
+
+    normalized = convert_audio(
+        in_path=in_path,
+        out_path=str(_artifact_path("normalized-input", "wav", clock.now_utc())),
+        fmt="wav",
+        backend="ffmpeg",
+        purpose="normalized_input",
+    )
+    normalized_path = paths.resolve_in_workspace(normalized.artifacts[0].path)
+    stt_result = stt_audio(in_path=str(normalized_path), backend="whisper")
+    transcript_text = stt_result.data.get("transcript", {}).get("text", "")
+    assessment = assess_from_transcript(ref_text, transcript_text)
+
+    assessment_path = _artifact_path("assessment", "json", clock.now_utc())
+    assessment_path.write_text(jsonio.dumps(assessment), encoding="utf-8")
+    assessment_artifact = Artifact(
+        path=str(assessment_path.relative_to(paths.ensure_workspace())),
+        mime="application/json",
+        purpose="assessment",
+        bytes=assessment_path.stat().st_size,
+    )
+
+    feedback = tts_audio(
+        text=ref_text,
+        voice="XiaoxiaoNeural",
+        out_path=str(_artifact_path("feedback-voice", "ogg", clock.now_utc())),
+        backend="edge-tts",
+        purpose="feedback_voice_note",
+    )
+
+    artifacts = [
+        *normalized.artifacts,
+        *stt_result.artifacts,
+        assessment_artifact,
+        *feedback.artifacts,
+    ]
+    artifacts_index = {artifact.purpose: artifact.path for artifact in artifacts}
+    summary = {"assessment": assessment, "artifacts_index": artifacts_index}
+    attempt_id = _store_pronunciation_attempt(
+        backend_id=backend,
+        artifacts=artifacts,
+        summary=summary,
+    )
+
+    data = {
+        "ref_text": ref_text,
+        "backend": {"id": backend, "features": ["assessment", "tts", "stt", "convert"]},
+        "artifacts_index": artifacts_index,
+        "attempt_id": attempt_id,
+    }
+    return ProcessVoiceResult(data=data, artifacts=artifacts)

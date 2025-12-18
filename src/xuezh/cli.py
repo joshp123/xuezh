@@ -437,12 +437,37 @@ def audio_assess(
     backend: str = typer.Option("local", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="audio.assess",
-        error_type="NOT_IMPLEMENTED",
-        message="audio assess is not implemented yet (see ticket T-10).",
-        details={"ref_text": ref_text, "in": in_path, "backend": backend},
-    )
+    try:
+        result = audio.assess_audio(ref_text=ref_text, in_path=in_path, backend=backend)
+        out = envelope.ok(command="audio.assess", data=result.data, artifacts=result.artifacts)
+    except ToolMissingError as exc:
+        out = envelope.err(
+            command="audio.assess",
+            error_type="TOOL_MISSING",
+            message=str(exc),
+            details={"tool": exc.tool, "ref_text": ref_text, "in": in_path, "backend": backend},
+        )
+    except ProcessFailedError as exc:
+        out = envelope.err(
+            command="audio.assess",
+            error_type="BACKEND_FAILED",
+            message="audio backend failed during assessment",
+            details={
+                "cmd": exc.cmd,
+                "returncode": exc.returncode,
+                "stderr": _trim(exc.stderr),
+                "ref_text": ref_text,
+                "in": in_path,
+                "backend": backend,
+            },
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        out = envelope.err(
+            command="audio.assess",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"ref_text": ref_text, "in": in_path, "backend": backend},
+        )
     _emit(out)
 
 
@@ -453,12 +478,37 @@ def audio_process_voice(
     backend: str = typer.Option("local", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="audio.process-voice",
-        error_type="NOT_IMPLEMENTED",
-        message="audio process-voice is not implemented yet (see ticket T-10).",
-        details={"in": in_path, "ref_text": ref_text, "backend": backend},
-    )
+    try:
+        result = audio.process_voice(in_path=in_path, ref_text=ref_text, backend=backend)
+        out = envelope.ok(command="audio.process-voice", data=result.data, artifacts=result.artifacts)
+    except ToolMissingError as exc:
+        out = envelope.err(
+            command="audio.process-voice",
+            error_type="TOOL_MISSING",
+            message=str(exc),
+            details={"tool": exc.tool, "ref_text": ref_text, "in": in_path, "backend": backend},
+        )
+    except ProcessFailedError as exc:
+        out = envelope.err(
+            command="audio.process-voice",
+            error_type="BACKEND_FAILED",
+            message="audio backend failed during voice processing",
+            details={
+                "cmd": exc.cmd,
+                "returncode": exc.returncode,
+                "stderr": _trim(exc.stderr),
+                "ref_text": ref_text,
+                "in": in_path,
+                "backend": backend,
+            },
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        out = envelope.err(
+            command="audio.process-voice",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"ref_text": ref_text, "in": in_path, "backend": backend},
+        )
     _emit(out)
 
 
