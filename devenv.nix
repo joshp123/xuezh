@@ -12,11 +12,6 @@
     venv.enable = true;
   };
 
-  languages.nodejs = {
-    enable = true;
-    version = "20";
-  };
-
   packages = with pkgs; [
     git
         gh
