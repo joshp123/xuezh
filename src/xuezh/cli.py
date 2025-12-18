@@ -238,13 +238,14 @@ def audio_convert(
     in_path: str = typer.Option(..., "--in"),
     out_path: str = typer.Option(..., "--out"),
     format: str = typer.Option(..., "--format", help="wav|ogg|mp3"),
+    backend: str = typer.Option("ffmpeg", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
     out = envelope.err(
         command="audio.convert",
         error_type="NOT_IMPLEMENTED",
         message="audio convert is not implemented yet (see ticket T-08).",
-        details={"in": in_path, "out": out_path, "format": format},
+        details={"in": in_path, "out": out_path, "format": format, "backend": backend},
     )
     typer.echo(dumps(out))
 
@@ -254,13 +255,14 @@ def audio_tts(
     text: str = typer.Option(..., "--text"),
     voice: str = typer.Option("XiaoxiaoNeural", "--voice"),
     out_path: str = typer.Option(..., "--out"),
+    backend: str = typer.Option("edge-tts", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
     out = envelope.err(
         command="audio.tts",
         error_type="NOT_IMPLEMENTED",
         message="audio tts is not implemented yet (see ticket T-08).",
-        details={"text": text, "voice": voice, "out": out_path},
+        details={"text": text, "voice": voice, "out": out_path, "backend": backend},
     )
     typer.echo(dumps(out))
 
@@ -268,13 +270,14 @@ def audio_tts(
 @audio_app.command("stt")
 def audio_stt(
     in_path: str = typer.Option(..., "--in"),
+    backend: str = typer.Option("whisper", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
     out = envelope.err(
         command="audio.stt",
         error_type="NOT_IMPLEMENTED",
         message="audio stt is not implemented yet (see ticket T-09).",
-        details={"in": in_path},
+        details={"in": in_path, "backend": backend},
     )
     typer.echo(dumps(out))
 
@@ -283,14 +286,14 @@ def audio_stt(
 def audio_assess(
     ref_text: str = typer.Option(..., "--ref-text"),
     in_path: str = typer.Option(..., "--in"),
-    mode: str = typer.Option("local", "--mode", help="local|azure"),
+    backend: str = typer.Option("local", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
     out = envelope.err(
         command="audio.assess",
         error_type="NOT_IMPLEMENTED",
         message="audio assess is not implemented yet (see ticket T-10).",
-        details={"ref_text": ref_text, "in": in_path, "mode": mode},
+        details={"ref_text": ref_text, "in": in_path, "backend": backend},
     )
     typer.echo(dumps(out))
 
@@ -299,14 +302,14 @@ def audio_assess(
 def audio_process_voice(
     in_path: str = typer.Option(..., "--in"),
     ref_text: str = typer.Option(..., "--ref-text"),
-    mode: str = typer.Option("local", "--mode", help="local|azure"),
+    backend: str = typer.Option("local", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
     out = envelope.err(
         command="audio.process-voice",
         error_type="NOT_IMPLEMENTED",
         message="audio process-voice is not implemented yet (see ticket T-10).",
-        details={"in": in_path, "ref_text": ref_text, "mode": mode},
+        details={"in": in_path, "ref_text": ref_text, "backend": backend},
     )
     typer.echo(dumps(out))
 

@@ -81,38 +81,38 @@
     },
     {
       "id": "audio.convert",
-      "cli": "xuezh audio convert --in IN --out OUT --format wav --json",
+      "cli": "xuezh audio convert --in IN --out OUT --format wav --backend ffmpeg --json",
       "schema_ok": "schemas/audio.convert.schema.json",
       "ticket": "T-08",
-      "example_cli": "xuezh audio convert --in IN --out OUT --format wav --json"
+      "example_cli": "xuezh audio convert --in IN --out OUT --format wav --backend ffmpeg --json"
     },
     {
       "id": "audio.tts",
-      "cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --json",
+      "cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --backend edge-tts --json",
       "schema_ok": "schemas/audio.tts.schema.json",
       "ticket": "T-08",
-      "example_cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --json"
+      "example_cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --backend edge-tts --json"
     },
     {
       "id": "audio.stt",
-      "cli": "xuezh audio stt --in IN.wav --json",
+      "cli": "xuezh audio stt --in IN.wav --backend whisper --json",
       "schema_ok": "schemas/audio.stt.schema.json",
       "ticket": "T-09",
-      "example_cli": "xuezh audio stt --in IN.wav --json"
+      "example_cli": "xuezh audio stt --in IN.wav --backend whisper --json"
     },
     {
       "id": "audio.assess",
-      "cli": "xuezh audio assess --ref-text TEXT --in IN.wav --mode local --json",
+      "cli": "xuezh audio assess --ref-text TEXT --in IN.wav --backend local --json",
       "schema_ok": "schemas/audio.assess.schema.json",
       "ticket": "T-10",
-      "example_cli": "xuezh audio assess --ref-text TEXT --in IN.wav --mode local --json"
+      "example_cli": "xuezh audio assess --ref-text TEXT --in IN.wav --backend local --json"
     },
     {
       "id": "audio.process-voice",
-      "cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --mode local --json",
+      "cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --backend local --json",
       "schema_ok": "schemas/audio.process-voice.schema.json",
       "ticket": "T-10",
-      "example_cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --mode local --json"
+      "example_cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --backend local --json"
     },
     {
       "id": "content.cache.put",

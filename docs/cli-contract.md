@@ -74,23 +74,23 @@ All commands return one of:
 - command id: `report.due`
 
 ### audio convert
-- `xuezh audio convert --in <path> --out <path> --format wav|ogg|mp3 --json`
+- `xuezh audio convert --in <path> --out <path> --format wav|ogg|mp3 --backend ffmpeg --json`
 - command id: `audio.convert`
 
 ### audio tts
-- `xuezh audio tts --text "<text>" --voice "<voice>" --out <path> --json`
+- `xuezh audio tts --text "<text>" --voice "<voice>" --out <path> --backend edge-tts --json`
 - command id: `audio.tts`
 
 ### audio stt
-- `xuezh audio stt --in <path> --json`
+- `xuezh audio stt --in <path> --backend whisper --json`
 - command id: `audio.stt`
 
 ### audio assess
-- `xuezh audio assess --ref-text "<text>" --in <path> --mode local|azure --json`
+- `xuezh audio assess --ref-text "<text>" --in <path> --backend <backend_id> --json`
 - command id: `audio.assess`
 
 ### audio process-voice
-- `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --mode local|azure --json`
+- `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --backend <backend_id> --json`
 - command id: `audio.process-voice`
 - output schema: `schemas/audio.process-voice.schema.json`
 

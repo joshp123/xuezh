@@ -26,7 +26,8 @@
       "required": [
         "ref_text",
         "in",
-        "assessment"
+        "assessment",
+        "backend"
       ],
       "properties": {
         "ref_text": {
@@ -37,6 +38,24 @@
         },
         "assessment": {
           "type": "object"
+        },
+        "backend": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true

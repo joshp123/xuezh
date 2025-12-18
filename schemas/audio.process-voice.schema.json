@@ -24,11 +24,30 @@
     "data": {
       "type": "object",
       "required": [
-        "ref_text"
+        "ref_text",
+        "backend"
       ],
       "properties": {
         "ref_text": {
           "type": "string"
+        },
+        "backend": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
         },
         "artifacts_index": {
           "type": "object"

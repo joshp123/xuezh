@@ -25,7 +25,8 @@
       "type": "object",
       "required": [
         "text",
-        "voice"
+        "voice",
+        "backend"
       ],
       "properties": {
         "text": {
@@ -33,6 +34,24 @@
         },
         "voice": {
           "type": "string"
+        },
+        "backend": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true

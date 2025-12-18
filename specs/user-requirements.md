@@ -38,6 +38,7 @@ As a learner, I can practice speaking and get structured feedback with artifacts
 
 - Input: Telegram voice note (ogg/opus) or wav
 - Output: normalized audio, transcript, assessment, feedback voice note
+- Audio is implemented via pluggable backends with auditable feature flags (see `specs/audio-backends.md`).
 
 ## UR-06: Graded input materials (cached)
 As a learner, I can receive stories/dialogues/exercises constrained by my level.

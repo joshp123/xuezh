@@ -25,7 +25,8 @@
       "type": "object",
       "required": [
         "in",
-        "transcript"
+        "transcript",
+        "backend"
       ],
       "properties": {
         "in": {
@@ -33,6 +34,24 @@
         },
         "transcript": {
           "type": "object"
+        },
+        "backend": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true

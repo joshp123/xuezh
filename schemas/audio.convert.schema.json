@@ -26,7 +26,8 @@
       "required": [
         "in",
         "out",
-        "format"
+        "format",
+        "backend"
       ],
       "properties": {
         "in": {
@@ -37,6 +38,24 @@
         },
         "format": {
           "type": "string"
+        },
+        "backend": {
+          "type": "object",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "features": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true
