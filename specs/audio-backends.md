@@ -31,3 +31,11 @@ When implemented, audio commands include backend metadata in `data.backend`:
 - `features`: a deterministic list of capability flags (strings)
 
 This is used for auditability and to keep the Skill’s behavior deterministic.
+
+## CI policy (YOLO)
+
+For now, audio command tests are expected to run against **real tools/backends** (ffmpeg, edge-tts, whisper, etc.)
+once those commands are implemented.
+
+If CI becomes flaky due to network/tool variance, revisit this policy and split out “real backend” checks into a
+separate workflow or add deterministic local backends for CI.
