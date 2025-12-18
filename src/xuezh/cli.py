@@ -2,8 +2,21 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, datasets, db, envelope, events, paths, retention, reports, snapshot as snapshot_core, srs
+from xuezh.core import (
+    audio,
+    clock,
+    datasets,
+    db,
+    envelope,
+    events,
+    paths,
+    retention,
+    reports,
+    snapshot as snapshot_core,
+    srs,
+)
 from xuezh.core.jsonio import dumps
+from xuezh.core.process import ProcessFailedError, ToolMissingError
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
 
@@ -13,6 +26,10 @@ def _emit(out: dict) -> None:
     if out.get("ok") is True:
         raise typer.Exit(code=0)
     raise typer.Exit(code=1)
+
+
+def _trim(text: str, limit: int = 2000) -> str:
+    return text if len(text) <= limit else text[:limit]
 
 
 # ---- Sub-apps (public CLI contract) ----
@@ -290,12 +307,38 @@ def audio_convert(
     backend: str = typer.Option("ffmpeg", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="audio.convert",
-        error_type="NOT_IMPLEMENTED",
-        message="audio convert is not implemented yet (see ticket T-08).",
-        details={"in": in_path, "out": out_path, "format": format, "backend": backend},
-    )
+    try:
+        result = audio.convert_audio(in_path=in_path, out_path=out_path, fmt=format, backend=backend)
+        out = envelope.ok(command="audio.convert", data=result.data, artifacts=result.artifacts)
+    except ToolMissingError as exc:
+        out = envelope.err(
+            command="audio.convert",
+            error_type="TOOL_MISSING",
+            message=str(exc),
+            details={"tool": exc.tool, "in": in_path, "out": out_path, "format": format, "backend": backend},
+        )
+    except ProcessFailedError as exc:
+        out = envelope.err(
+            command="audio.convert",
+            error_type="BACKEND_FAILED",
+            message="audio backend failed during conversion",
+            details={
+                "cmd": exc.cmd,
+                "returncode": exc.returncode,
+                "stderr": _trim(exc.stderr),
+                "in": in_path,
+                "out": out_path,
+                "format": format,
+                "backend": backend,
+            },
+        )
+    except (ValueError, FileNotFoundError) as exc:
+        out = envelope.err(
+            command="audio.convert",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"in": in_path, "out": out_path, "format": format, "backend": backend},
+        )
     _emit(out)
 
 
@@ -307,12 +350,38 @@ def audio_tts(
     backend: str = typer.Option("edge-tts", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="audio.tts",
-        error_type="NOT_IMPLEMENTED",
-        message="audio tts is not implemented yet (see ticket T-08).",
-        details={"text": text, "voice": voice, "out": out_path, "backend": backend},
-    )
+    try:
+        result = audio.tts_audio(text=text, voice=voice, out_path=out_path, backend=backend)
+        out = envelope.ok(command="audio.tts", data=result.data, artifacts=result.artifacts)
+    except ToolMissingError as exc:
+        out = envelope.err(
+            command="audio.tts",
+            error_type="TOOL_MISSING",
+            message=str(exc),
+            details={"tool": exc.tool, "text": text, "voice": voice, "out": out_path, "backend": backend},
+        )
+    except ProcessFailedError as exc:
+        out = envelope.err(
+            command="audio.tts",
+            error_type="BACKEND_FAILED",
+            message="audio backend failed during tts",
+            details={
+                "cmd": exc.cmd,
+                "returncode": exc.returncode,
+                "stderr": _trim(exc.stderr),
+                "text": text,
+                "voice": voice,
+                "out": out_path,
+                "backend": backend,
+            },
+        )
+    except ValueError as exc:
+        out = envelope.err(
+            command="audio.tts",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"text": text, "voice": voice, "out": out_path, "backend": backend},
+        )
     _emit(out)
 
 

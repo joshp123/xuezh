@@ -12,5 +12,7 @@
   "event.log",
   "event.list",
   "report.hsk",
-  "report.mastery"
+  "report.mastery",
+  "audio.convert",
+  "audio.tts"
 ]

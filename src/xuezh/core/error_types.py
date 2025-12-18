@@ -5,7 +5,10 @@ from typing import Final
 # The backend uses typed errors so tool callers can branch safely without parsing strings.
 # Keep this list minimal and grow it only when a new type is actually emitted.
 KNOWN_ERROR_TYPES: Final[set[str]] = {
+    "BACKEND_FAILED",
+    "INVALID_ARGUMENT",
     "NOT_IMPLEMENTED",
+    "TOOL_MISSING",
 }
 
 
