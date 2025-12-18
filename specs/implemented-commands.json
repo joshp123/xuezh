@@ -10,5 +10,7 @@
   "srs.preview",
   "report.due",
   "event.log",
-  "event.list"
+  "event.list",
+  "report.hsk",
+  "report.mastery"
 ]

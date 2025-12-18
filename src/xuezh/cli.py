@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, datasets, db, envelope, events, paths, retention, snapshot as snapshot_core, srs
+from xuezh.core import clock, datasets, db, envelope, events, paths, retention, reports, snapshot as snapshot_core, srs
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -217,24 +217,26 @@ def srs_preview(
 # -------------- report --------------
 @report_app.command("hsk")
 def report_hsk(
-    level: int = typer.Option(..., "--level", min=1, max=6),
+    level: str = typer.Option(..., "--level"),
     window: str = typer.Option("30d", "--window"),
     max_items: int = typer.Option(200, "--max-items"),
     max_bytes: int = typer.Option(200_000, "--max-bytes"),
     include_chars: bool = typer.Option(False, "--include-chars", help="Optional: include character audit if dataset exists"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    result = reports.build_hsk_report(
+        level=level,
+        window=window,
+        max_items=max_items,
+        max_bytes=max_bytes,
+        include_chars=include_chars,
+    )
+    out = envelope.ok(
         command="report.hsk",
-        error_type="NOT_IMPLEMENTED",
-        message="report hsk is not implemented yet (see ticket T-07).",
-        details={
-            "level": level,
-            "window": window,
-            "max_items": max_items,
-            "max_bytes": max_bytes,
-            "include_chars": include_chars,
-        },
+        data=result.data,
+        artifacts=result.artifacts,
+        truncated=result.truncated,
+        limits=result.limits,
     )
     _emit(out)
 
@@ -247,11 +249,18 @@ def report_mastery(
     max_bytes: int = typer.Option(200_000, "--max-bytes"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    result = reports.build_mastery_report(
+        item_type=item_type,
+        window=window,
+        max_items=max_items,
+        max_bytes=max_bytes,
+    )
+    out = envelope.ok(
         command="report.mastery",
-        error_type="NOT_IMPLEMENTED",
-        message="report mastery is not implemented yet (see ticket T-07).",
-        details={"item_type": item_type, "window": window, "max_items": max_items, "max_bytes": max_bytes},
+        data=result.data,
+        artifacts=result.artifacts,
+        truncated=result.truncated,
+        limits=result.limits,
     )
     _emit(out)
 
