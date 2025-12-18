@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from xuezh.core import clock, db, jsonio, paths
+from xuezh.core import clock, db, events, jsonio, paths
 from xuezh.core.envelope import Artifact
 
 
@@ -81,11 +81,24 @@ def build_snapshot(
     finally:
         conn.close()
 
+    recent_events = events.list_events(since=window, limit=evidence_limit)
+    exposure_counts = events.exposure_counts(since=window)
+
     data = {
         "generated_at": now.isoformat(),
         "window": window,
-        "recent_events": [],
-        "exposure_counts": {},
+        "recent_events": [
+            {
+                "event_id": event.event_id,
+                "event_type": event.event_type,
+                "ts": event.ts,
+                "modality": event.modality,
+                "items": event.items,
+                "context": event.context,
+            }
+            for event in recent_events
+        ],
+        "exposure_counts": exposure_counts,
         "due_items": [],
         "due_counts_by_day": {},
         "hsk_summary": hsk_summary,

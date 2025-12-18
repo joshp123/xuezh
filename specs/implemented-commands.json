@@ -8,5 +8,7 @@
   "review.grade",
   "review.bury",
   "srs.preview",
-  "report.due"
+  "report.due",
+  "event.log",
+  "event.list"
 ]

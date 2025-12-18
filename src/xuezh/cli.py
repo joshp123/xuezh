@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, datasets, db, envelope, paths, retention, snapshot as snapshot_core, srs
+from xuezh.core import clock, datasets, db, envelope, events, paths, retention, snapshot as snapshot_core, srs
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -364,11 +364,18 @@ def event_log(
     context: str | None = typer.Option(None, "--context"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    parsed = events.parse_items(items=items, items_file=items_file)
+    event = events.log_event(event_type=type, modality=modality, items=parsed, context=context)
+    out = envelope.ok(
         command="event.log",
-        error_type="NOT_IMPLEMENTED",
-        message="event log is not implemented yet (see ticket T-06B).",
-        details={"type": type, "modality": modality, "items": items, "items_file": items_file, "context": context},
+        data={
+            "event_id": event.event_id,
+            "event_type": event.event_type,
+            "ts": event.ts,
+            "modality": event.modality,
+            "items": event.items,
+            "context": event.context,
+        },
     )
     _emit(out)
 
@@ -379,11 +386,23 @@ def event_list(
     limit: int = typer.Option(200, "--limit"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
+    items = events.list_events(since=since, limit=limit)
+    out = envelope.ok(
         command="event.list",
-        error_type="NOT_IMPLEMENTED",
-        message="event list is not implemented yet (see ticket T-06B).",
-        details={"since": since, "limit": limit},
+        data={
+            "events": [
+                {
+                    "event_id": event.event_id,
+                    "event_type": event.event_type,
+                    "ts": event.ts,
+                    "modality": event.modality,
+                    "items": event.items,
+                    "context": event.context,
+                }
+                for event in items
+            ]
+        },
+        limits={"limit": limit, "since": since},
     )
     _emit(out)
 
