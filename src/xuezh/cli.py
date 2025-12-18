@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import typer
 
-from xuezh.core import clock, datasets, db, envelope, paths, retention
+from xuezh.core import clock, datasets, db, envelope, paths, retention, snapshot as snapshot_core
 from xuezh.core.jsonio import dumps
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -52,16 +52,18 @@ def snapshot(
     json_output: bool = typer.Option(True, "--json"),
 ):
     """Bounded context pack for the LLM planner. Single-user system."""
-    out = envelope.err(
+    result = snapshot_core.build_snapshot(
+        window=window,
+        due_limit=due_limit,
+        evidence_limit=evidence_limit,
+        max_bytes=max_bytes,
+    )
+    out = envelope.ok(
         command="snapshot",
-        error_type="NOT_IMPLEMENTED",
-        message="snapshot is not implemented yet (see ticket T-05).",
-        details={
-            "window": window,
-            "due_limit": due_limit,
-            "evidence_limit": evidence_limit,
-            "max_bytes": max_bytes,
-        },
+        data=result.data,
+        artifacts=result.artifacts,
+        truncated=result.truncated,
+        limits=result.limits,
     )
     _emit(out)
 
