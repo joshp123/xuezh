@@ -5,6 +5,7 @@ import typer
 from xuezh.core import (
     audio,
     clock,
+    content,
     datasets,
     db,
     envelope,
@@ -577,12 +578,23 @@ def cache_put(
     in_path: str = typer.Option(..., "--in"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="content.cache.put",
-        error_type="NOT_IMPLEMENTED",
-        message="content cache put is not implemented yet (see ticket T-11).",
-        details={"type": type, "key": key, "in": in_path},
-    )
+    try:
+        result = content.put_content(content_type=type, key=key, in_path=in_path)
+        out = envelope.ok(command="content.cache.put", data=result.data, artifacts=result.artifacts)
+    except FileNotFoundError as exc:
+        out = envelope.err(
+            command="content.cache.put",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"type": type, "key": key, "in": in_path},
+        )
+    except ValueError as exc:
+        out = envelope.err(
+            command="content.cache.put",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"type": type, "key": key, "in": in_path},
+        )
     _emit(out)
 
 
@@ -592,12 +604,23 @@ def cache_get(
     key: str = typer.Option(..., "--key"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    out = envelope.err(
-        command="content.cache.get",
-        error_type="NOT_IMPLEMENTED",
-        message="content cache get is not implemented yet (see ticket T-11).",
-        details={"type": type, "key": key},
-    )
+    try:
+        result = content.get_content(content_type=type, key=key)
+        out = envelope.ok(command="content.cache.get", data=result.data, artifacts=result.artifacts)
+    except FileNotFoundError as exc:
+        out = envelope.err(
+            command="content.cache.get",
+            error_type="NOT_FOUND",
+            message=str(exc),
+            details={"type": type, "key": key},
+        )
+    except ValueError as exc:
+        out = envelope.err(
+            command="content.cache.get",
+            error_type="INVALID_ARGUMENT",
+            message=str(exc),
+            details={"type": type, "key": key},
+        )
     _emit(out)
 
 

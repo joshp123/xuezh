@@ -8,6 +8,7 @@ KNOWN_ERROR_TYPES: Final[set[str]] = {
     "BACKEND_FAILED",
     "INVALID_ARGUMENT",
     "NOT_IMPLEMENTED",
+    "NOT_FOUND",
     "TOOL_MISSING",
 }
 

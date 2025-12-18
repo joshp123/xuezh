@@ -17,5 +17,7 @@
   "audio.tts",
   "audio.stt",
   "audio.assess",
-  "audio.process-voice"
+  "audio.process-voice",
+  "content.cache.put",
+  "content.cache.get"
 ]
