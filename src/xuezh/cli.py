@@ -477,7 +477,13 @@ def audio_process_voice(
     )
     try:
         result = audio.process_voice(in_path=in_path, ref_text=ref_text, backend=backend)
-        out = envelope.ok(command="audio.process-voice", data=result.data, artifacts=result.artifacts)
+        out = envelope.ok(
+            command="audio.process-voice",
+            data=result.data,
+            artifacts=result.artifacts,
+            truncated=result.truncated,
+            limits=result.limits,
+        )
     except AzureSpeechError as exc:
         error_type = "BACKEND_FAILED"
         if exc.kind == "quota":

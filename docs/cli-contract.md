@@ -89,6 +89,8 @@ All commands return one of:
 - command id: `audio.process-voice`
 - output schema: `schemas/audio.process-voice.schema.json`
 - default pronunciation backend: `azure.speech` (requires `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`)
+- output includes inline `assessment` + `transcript` for actionable feedback; full detail remains in artifacts
+- if inline word/phoneme detail is too large, only summary is returned inline and `truncated=true` with full detail in artifacts
 
 ### audio backend selection (deterministic)
 - Global override: `XUEZH_AUDIO_BACKEND=<backend_id>`

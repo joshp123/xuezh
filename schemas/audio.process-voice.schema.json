@@ -25,11 +25,21 @@
       "type": "object",
       "required": [
         "ref_text",
-        "backend"
+        "backend",
+        "assessment",
+        "transcript"
       ],
       "properties": {
         "ref_text": {
           "type": "string"
+        },
+        "assessment": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "transcript": {
+          "type": "object",
+          "additionalProperties": true
         },
         "backend": {
           "type": "object",

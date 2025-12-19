@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime
 import json
 import os
@@ -16,6 +16,7 @@ SUPPORTED_FORMATS = {"wav", "ogg", "mp3"}
 VOICE_ALIASES = {
     "XiaoxiaoNeural": "zh-CN-XiaoxiaoNeural",
 }
+INLINE_DETAIL_MAX_BYTES = int(os.environ.get("XUEZH_AUDIO_INLINE_MAX_BYTES", "200000"))
 
 
 @dataclass(frozen=True)
@@ -53,6 +54,8 @@ class AssessResult:
 class ProcessVoiceResult:
     data: dict
     artifacts: list[Artifact]
+    truncated: bool = False
+    limits: dict = field(default_factory=dict)
 
 
 class AzureSpeechError(RuntimeError):
@@ -288,6 +291,74 @@ def _normalize_text(text: str) -> str:
     return "".join(text.strip().split()).lower()
 
 
+def _summarize_detail(payload: dict) -> dict:
+    summary = dict(payload)
+    summary.pop("words", None)
+    summary.pop("segments", None)
+    return summary
+
+
+def _payload_bytes(*, assessment: dict, transcript: dict) -> int:
+    payload = {"assessment": assessment, "transcript": transcript}
+    return len(jsonio.dumps(payload).encode("utf-8"))
+
+
+def _minimal_assessment(assessment: dict, artifacts_index: dict) -> dict:
+    minimal: dict = {}
+    overall = assessment.get("overall")
+    if isinstance(overall, dict) and overall:
+        minimal["overall"] = overall
+    if "exact_match" in assessment:
+        minimal["exact_match"] = assessment.get("exact_match")
+    if "note" in assessment:
+        minimal["note"] = assessment.get("note")
+    assessment_artifact = artifacts_index.get("assessment")
+    if assessment_artifact:
+        minimal["spill_artifact"] = assessment_artifact
+    return minimal
+
+
+def _minimal_transcript(transcript: dict, artifacts_index: dict, preview_len: int) -> dict:
+    minimal: dict = {}
+    text = transcript.get("text")
+    if isinstance(text, str) and preview_len > 0:
+        minimal["text_preview"] = text[:preview_len]
+        minimal["text_truncated"] = len(text) > preview_len
+    transcript_artifact = artifacts_index.get("transcript")
+    if transcript_artifact:
+        minimal["spill_artifact"] = transcript_artifact
+    return minimal
+
+
+def _inline_pronunciation_payload(
+    *,
+    assessment: dict,
+    transcript: dict,
+    artifacts_index: dict,
+) -> tuple[dict, dict, bool]:
+    detail_bytes = _payload_bytes(assessment=assessment, transcript=transcript)
+    if detail_bytes <= INLINE_DETAIL_MAX_BYTES:
+        return assessment, transcript, False
+    assessment_summary = _summarize_detail(assessment)
+    transcript_summary = _summarize_detail(transcript)
+    summary_bytes = _payload_bytes(assessment=assessment_summary, transcript=transcript_summary)
+    if summary_bytes <= INLINE_DETAIL_MAX_BYTES:
+        return assessment_summary, transcript_summary, True
+    preview_len = 2000
+    text = transcript.get("text")
+    if isinstance(text, str):
+        preview_len = min(len(text), preview_len)
+    else:
+        preview_len = 0
+    assessment_min = _minimal_assessment(assessment, artifacts_index)
+    transcript_min = _minimal_transcript(transcript, artifacts_index, preview_len)
+    minimal_bytes = _payload_bytes(assessment=assessment_min, transcript=transcript_min)
+    if minimal_bytes <= INLINE_DETAIL_MAX_BYTES:
+        return assessment_min, transcript_min, True
+    transcript_min = _minimal_transcript(transcript, artifacts_index, 0)
+    return assessment_min, transcript_min, True
+
+
 def assess_from_transcript(ref_text: str, transcript_text: str) -> dict:
     ref_norm = _normalize_text(ref_text)
     transcript_norm = _normalize_text(transcript_text)
@@ -402,7 +473,15 @@ def _azure_pronunciation_assess(*, ref_text: str, wav_path: Path) -> tuple[dict,
 def assess_audio(*, ref_text: str, in_path: str, backend: str) -> AssessResult:
     if backend == "local":
         stt_result = stt_audio(in_path=in_path, backend="whisper")
-        transcript_text = stt_result.data.get("transcript", {}).get("text", "")
+        transcript = stt_result.data.get("transcript", {}) or {}
+        spill_path = transcript.get("spill_artifact")
+        if spill_path:
+            try:
+                transcript_path = paths.resolve_in_workspace(spill_path)
+                transcript = json.loads(transcript_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                transcript = {"spill_artifact": spill_path}
+        transcript_text = transcript.get("text", "")
         assessment = assess_from_transcript(ref_text, transcript_text)
 
         now = clock.now_utc()
@@ -493,7 +572,15 @@ def process_voice(*, in_path: str, ref_text: str, backend: str = "azure.speech")
 
     if backend == "local":
         stt_result = stt_audio(in_path=str(normalized_path), backend="whisper")
-        transcript_text = stt_result.data.get("transcript", {}).get("text", "")
+        transcript = stt_result.data.get("transcript", {}) or {}
+        spill_path = transcript.get("spill_artifact")
+        if spill_path:
+            try:
+                transcript_path = paths.resolve_in_workspace(spill_path)
+                transcript = json.loads(transcript_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                transcript = {"spill_artifact": spill_path}
+        transcript_text = transcript.get("text", "")
         assessment = assess_from_transcript(ref_text, transcript_text)
         assessment_artifact = _write_json_artifact(
             assessment, purpose="assessment", prefix="assessment", now=clock.now_utc()
@@ -527,12 +614,20 @@ def process_voice(*, in_path: str, ref_text: str, backend: str = "azure.speech")
         *feedback.artifacts,
     ]
     artifacts_index = {artifact.purpose: artifact.path for artifact in artifacts}
-    summary = {"assessment": assessment, "artifacts_index": artifacts_index}
-    _store_pronunciation_attempt(
-        backend_id=backend,
-        artifacts=artifacts,
-        summary=summary,
+    assessment_inline, transcript_inline, inline_truncated = _inline_pronunciation_payload(
+        assessment=assessment,
+        transcript=transcript,
+        artifacts_index=artifacts_index,
     )
+    summary = {"assessment": assessment, "artifacts_index": artifacts_index}
+    try:
+        _store_pronunciation_attempt(
+            backend_id=backend,
+            artifacts=artifacts,
+            summary=summary,
+        )
+    except Exception:
+        pass
 
     if backend == "local":
         features = ["assessment", "tts", "stt", "convert"]
@@ -543,5 +638,10 @@ def process_voice(*, in_path: str, ref_text: str, backend: str = "azure.speech")
         "ref_text": ref_text,
         "backend": {"id": backend, "features": features},
         "artifacts_index": artifacts_index,
+        "assessment": assessment_inline,
+        "transcript": transcript_inline,
     }
-    return ProcessVoiceResult(data=data, artifacts=artifacts)
+    limits = {}
+    if inline_truncated:
+        limits = {"inline_bytes_max": INLINE_DETAIL_MAX_BYTES}
+    return ProcessVoiceResult(data=data, artifacts=artifacts, truncated=inline_truncated, limits=limits)

@@ -40,6 +40,86 @@
       "normalized_input": "artifacts/2025/01/02/normalized-input-20250102T030405Z.wav",
       "transcript": "artifacts/2025/01/02/transcript-20250102T030405Z.json"
     },
+    "assessment": {
+      "overall": {
+        "accuracy_score": 34.0,
+        "completeness_score": 0.0,
+        "fluency_score": 0.0,
+        "pronunciation_score": 6.8
+      },
+      "reference_text": "你好",
+      "transcript_text": "你好你好。",
+      "words": [
+        {
+          "accuracy_score": 83.0,
+          "error_type": "Insertion",
+          "phonemes": [
+            {
+              "Duration": 4500000,
+              "Offset": 6900000,
+              "Phoneme": "ni 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 76.0
+              }
+            },
+            {
+              "Duration": 6300000,
+              "Offset": 11500000,
+              "Phoneme": "hao 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 88.0
+              }
+            }
+          ],
+          "syllables": [
+            {
+              "Duration": 10900000,
+              "Grapheme": "你好",
+              "Offset": 6900000,
+              "PronunciationAssessment": {
+                "AccuracyScore": 85.0
+              },
+              "Syllable": ""
+            }
+          ],
+          "word": "你好"
+        },
+        {
+          "accuracy_score": 34.0,
+          "error_type": "Mispronunciation",
+          "phonemes": [
+            {
+              "Duration": 3000000,
+              "Offset": 29500000,
+              "Phoneme": "ni 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 23.0
+              }
+            },
+            {
+              "Duration": 1100000,
+              "Offset": 32600000,
+              "Phoneme": "hao 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 63.0
+              }
+            }
+          ],
+          "syllables": [
+            {
+              "Duration": 4200000,
+              "Grapheme": "你好",
+              "Offset": 29500000,
+              "PronunciationAssessment": {
+                "AccuracyScore": 41.0
+              },
+              "Syllable": ""
+            }
+          ],
+          "word": "你好"
+        }
+      ]
+    },
     "backend": {
       "features": [
         "assessment",
@@ -49,7 +129,80 @@
       ],
       "id": "azure.speech"
     },
-    "ref_text": "你好"
+    "ref_text": "你好",
+    "transcript": {
+      "text": "你好你好。",
+      "words": [
+        {
+          "accuracy_score": 83.0,
+          "error_type": "Insertion",
+          "phonemes": [
+            {
+              "Duration": 4500000,
+              "Offset": 6900000,
+              "Phoneme": "ni 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 76.0
+              }
+            },
+            {
+              "Duration": 6300000,
+              "Offset": 11500000,
+              "Phoneme": "hao 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 88.0
+              }
+            }
+          ],
+          "syllables": [
+            {
+              "Duration": 10900000,
+              "Grapheme": "你好",
+              "Offset": 6900000,
+              "PronunciationAssessment": {
+                "AccuracyScore": 85.0
+              },
+              "Syllable": ""
+            }
+          ],
+          "word": "你好"
+        },
+        {
+          "accuracy_score": 34.0,
+          "error_type": "Mispronunciation",
+          "phonemes": [
+            {
+              "Duration": 3000000,
+              "Offset": 29500000,
+              "Phoneme": "ni 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 23.0
+              }
+            },
+            {
+              "Duration": 1100000,
+              "Offset": 32600000,
+              "Phoneme": "hao 3",
+              "PronunciationAssessment": {
+                "AccuracyScore": 63.0
+              }
+            }
+          ],
+          "syllables": [
+            {
+              "Duration": 4200000,
+              "Grapheme": "你好",
+              "Offset": 29500000,
+              "PronunciationAssessment": {
+                "AccuracyScore": 41.0
+              },
+              "Syllable": ""
+            }
+          ],
+          "word": "你好"
+        }
+      ]
+    }
   },
   "limits": {},
   "ok": true,
