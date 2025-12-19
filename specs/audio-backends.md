@@ -24,6 +24,17 @@ Every `xuezh audio <cmd>` supports:
 
 If omitted, each command uses its documented default backend.
 
+## Azure Speech (pronunciation assessment)
+
+Backend id: `azure.speech`
+
+Requirements:
+- `AZURE_SPEECH_KEY`
+- `AZURE_SPEECH_REGION`
+
+Free-tier policy:
+- Use the free-tier quota only; if Azure returns quota/limit errors, the CLI surfaces a typed error.
+
 ## Deterministic features (auditable)
 
 When implemented, audio commands include backend metadata in `data.backend`:

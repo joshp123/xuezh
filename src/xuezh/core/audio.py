@@ -3,13 +3,14 @@ from __future__ import annotations
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import json
+import os
 import shutil
 from pathlib import Path
 from uuid import uuid4
 
 from xuezh.core import clock, db, jsonio, paths
 from xuezh.core.envelope import Artifact
-from xuezh.core.process import ensure_tool, run_checked
+from xuezh.core.process import ToolMissingError, ensure_tool, run_checked
 
 SUPPORTED_FORMATS = {"wav", "ogg", "mp3"}
 VOICE_ALIASES = {
@@ -52,6 +53,13 @@ class AssessResult:
 class ProcessVoiceResult:
     data: dict
     artifacts: list[Artifact]
+
+
+class AzureSpeechError(RuntimeError):
+    def __init__(self, kind: str, message: str, details: dict | None = None) -> None:
+        super().__init__(message)
+        self.kind = kind
+        self.details = details or {}
 
 
 def build_convert_command(in_path: Path, out_path: Path, fmt: str) -> list[str]:
@@ -291,32 +299,141 @@ def assess_from_transcript(ref_text: str, transcript_text: str) -> dict:
     }
 
 
-def assess_audio(*, ref_text: str, in_path: str, backend: str) -> AssessResult:
-    if backend != "local":
-        raise ValueError(f"Unsupported backend: {backend}")
-
-    stt_result = stt_audio(in_path=in_path, backend="whisper")
-    transcript_text = stt_result.data.get("transcript", {}).get("text", "")
-    assessment = assess_from_transcript(ref_text, transcript_text)
-
-    now = clock.now_utc()
-    assessment_path = _artifact_path("assessment", "json", now)
-    assessment_path.write_text(jsonio.dumps(assessment), encoding="utf-8")
-    assessment_artifact = Artifact(
-        path=str(assessment_path.relative_to(paths.ensure_workspace())),
+def _write_json_artifact(payload: dict, *, purpose: str, prefix: str, now: datetime) -> Artifact:
+    path = _artifact_path(prefix, "json", now)
+    path.write_text(jsonio.dumps(payload), encoding="utf-8")
+    return Artifact(
+        path=str(path.relative_to(paths.ensure_workspace())),
         mime="application/json",
-        purpose="assessment",
-        bytes=assessment_path.stat().st_size,
+        purpose=purpose,
+        bytes=path.stat().st_size,
     )
 
-    data = {
-        "ref_text": ref_text,
-        "in": str(Path(in_path).expanduser()),
-        "assessment": assessment,
-        "backend": {"id": backend, "features": ["assessment"]},
+
+def _load_speechsdk():
+    try:
+        import azure.cognitiveservices.speech as speechsdk  # type: ignore
+    except Exception as exc:  # pragma: no cover - import guard
+        raise ToolMissingError("azure-cognitiveservices-speech") from exc
+    return speechsdk
+
+
+def _azure_pronunciation_assess(*, ref_text: str, wav_path: Path) -> tuple[dict, dict, dict]:
+    speechsdk = _load_speechsdk()
+
+    key = os.environ.get("AZURE_SPEECH_KEY")
+    region = os.environ.get("AZURE_SPEECH_REGION")
+    if not key or not region:
+        raise ValueError("Azure Speech credentials missing (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION)")
+
+    speech_config = speechsdk.SpeechConfig(subscription=key, region=region)
+    speech_config.speech_recognition_language = "zh-CN"
+
+    audio_config = speechsdk.audio.AudioConfig(filename=str(wav_path))
+    recognizer = speechsdk.SpeechRecognizer(speech_config=speech_config, audio_config=audio_config)
+
+    pa_config = speechsdk.PronunciationAssessmentConfig(
+        reference_text=ref_text,
+        grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
+        granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
+        enable_miscue=True,
+    )
+    pa_config.apply_to(recognizer)
+
+    result = recognizer.recognize_once_async().get()
+    if result.reason == speechsdk.ResultReason.Canceled:
+        details = speechsdk.CancellationDetails.from_result(result)
+        error_text = details.error_details or ""
+        lowered = error_text.lower()
+        if "quota" in lowered or "limit" in lowered or "429" in lowered:
+            raise AzureSpeechError("quota", "Azure Speech quota exceeded", {"error_details": error_text})
+        if "401" in lowered or "403" in lowered or "unauthorized" in lowered:
+            raise AzureSpeechError("auth", "Azure Speech authentication failed", {"error_details": error_text})
+        raise AzureSpeechError("backend", "Azure Speech request failed", {"error_details": error_text})
+
+    raw_json_text = result.properties.get(speechsdk.PropertyId.SpeechServiceResponse_JsonResult) or "{}"
+    raw_json = json.loads(raw_json_text)
+
+    pa_result = speechsdk.PronunciationAssessmentResult(result)
+    overall = {
+        "accuracy_score": getattr(pa_result, "accuracy_score", None),
+        "fluency_score": getattr(pa_result, "fluency_score", None),
+        "completeness_score": getattr(pa_result, "completeness_score", None),
+        "pronunciation_score": getattr(pa_result, "pronunciation_score", None),
     }
-    artifacts = [assessment_artifact, *stt_result.artifacts]
-    return AssessResult(data=data, artifacts=artifacts)
+
+    nbest = (raw_json.get("NBest") or [{}])[0]
+    display_text = nbest.get("Display") or nbest.get("DisplayText") or raw_json.get("DisplayText") or raw_json.get("Text")
+    words = []
+    for word in nbest.get("Words", []) or []:
+        words.append(
+            {
+                "word": word.get("Word"),
+                "accuracy_score": word.get("PronunciationAssessment", {}).get("AccuracyScore"),
+                "error_type": word.get("PronunciationAssessment", {}).get("ErrorType"),
+                "syllables": word.get("Syllables"),
+                "phonemes": word.get("Phonemes"),
+            }
+        )
+
+    transcript = {
+        "text": display_text or "",
+        "words": words,
+    }
+
+    assessment = {
+        "reference_text": ref_text,
+        "transcript_text": transcript["text"],
+        "overall": overall,
+        "words": words,
+    }
+    return assessment, transcript, raw_json
+
+
+def assess_audio(*, ref_text: str, in_path: str, backend: str) -> AssessResult:
+    if backend == "local":
+        stt_result = stt_audio(in_path=in_path, backend="whisper")
+        transcript_text = stt_result.data.get("transcript", {}).get("text", "")
+        assessment = assess_from_transcript(ref_text, transcript_text)
+
+        now = clock.now_utc()
+        assessment_artifact = _write_json_artifact(assessment, purpose="assessment", prefix="assessment", now=now)
+
+        data = {
+            "ref_text": ref_text,
+            "in": str(Path(in_path).expanduser()),
+            "assessment": assessment,
+            "backend": {"id": backend, "features": ["assessment"]},
+        }
+        artifacts = [assessment_artifact, *stt_result.artifacts]
+        return AssessResult(data=data, artifacts=artifacts)
+
+    if backend == "azure.speech":
+        normalized = convert_audio(
+            in_path=in_path,
+            out_path=str(_artifact_path("normalized-input", "wav", clock.now_utc())),
+            fmt="wav",
+            backend="ffmpeg",
+            purpose="normalized_input",
+        )
+        normalized_path = paths.resolve_in_workspace(normalized.artifacts[0].path)
+        assessment, transcript, raw_json = _azure_pronunciation_assess(ref_text=ref_text, wav_path=normalized_path)
+
+        now = clock.now_utc()
+        assessment_artifact = _write_json_artifact(assessment, purpose="assessment", prefix="assessment", now=now)
+        transcript_artifact = _write_json_artifact(transcript, purpose="transcript", prefix="transcript", now=now)
+        raw_artifact = _write_json_artifact(raw_json, purpose="azure_response", prefix="azure-response", now=now)
+
+        data = {
+            "ref_text": ref_text,
+            "in": str(Path(in_path).expanduser()),
+            "assessment": assessment,
+            "backend": {"id": backend, "features": ["assessment"]},
+        }
+        artifacts = [*normalized.artifacts, transcript_artifact, assessment_artifact, raw_artifact]
+        return AssessResult(data=data, artifacts=artifacts)
+
+    raise ValueError(f"Unsupported backend: {backend}")
 
 
 def _store_pronunciation_attempt(
@@ -353,7 +470,7 @@ def _store_pronunciation_attempt(
 
 
 def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceResult:
-    if backend != "local":
+    if backend not in {"local", "azure.speech"}:
         raise ValueError(f"Unsupported backend: {backend}")
 
     normalized = convert_audio(
@@ -364,18 +481,27 @@ def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceR
         purpose="normalized_input",
     )
     normalized_path = paths.resolve_in_workspace(normalized.artifacts[0].path)
-    stt_result = stt_audio(in_path=str(normalized_path), backend="whisper")
-    transcript_text = stt_result.data.get("transcript", {}).get("text", "")
-    assessment = assess_from_transcript(ref_text, transcript_text)
 
-    assessment_path = _artifact_path("assessment", "json", clock.now_utc())
-    assessment_path.write_text(jsonio.dumps(assessment), encoding="utf-8")
-    assessment_artifact = Artifact(
-        path=str(assessment_path.relative_to(paths.ensure_workspace())),
-        mime="application/json",
-        purpose="assessment",
-        bytes=assessment_path.stat().st_size,
-    )
+    if backend == "local":
+        stt_result = stt_audio(in_path=str(normalized_path), backend="whisper")
+        transcript_text = stt_result.data.get("transcript", {}).get("text", "")
+        assessment = assess_from_transcript(ref_text, transcript_text)
+        assessment_artifact = _write_json_artifact(
+            assessment, purpose="assessment", prefix="assessment", now=clock.now_utc()
+        )
+        transcript_artifacts = stt_result.artifacts
+    else:
+        assessment, transcript, raw_json = _azure_pronunciation_assess(ref_text=ref_text, wav_path=normalized_path)
+        assessment_artifact = _write_json_artifact(
+            assessment, purpose="assessment", prefix="assessment", now=clock.now_utc()
+        )
+        transcript_artifact = _write_json_artifact(
+            transcript, purpose="transcript", prefix="transcript", now=clock.now_utc()
+        )
+        raw_artifact = _write_json_artifact(
+            raw_json, purpose="azure_response", prefix="azure-response", now=clock.now_utc()
+        )
+        transcript_artifacts = [transcript_artifact, raw_artifact]
 
     feedback = tts_audio(
         text=ref_text,
@@ -387,7 +513,7 @@ def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceR
 
     artifacts = [
         *normalized.artifacts,
-        *stt_result.artifacts,
+        *transcript_artifacts,
         assessment_artifact,
         *feedback.artifacts,
     ]
@@ -399,9 +525,14 @@ def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceR
         summary=summary,
     )
 
+    if backend == "local":
+        features = ["assessment", "tts", "stt", "convert"]
+    else:
+        features = ["assessment", "tts", "convert", "azure.speech"]
+
     data = {
         "ref_text": ref_text,
-        "backend": {"id": backend, "features": ["assessment", "tts", "stt", "convert"]},
+        "backend": {"id": backend, "features": features},
         "artifacts_index": artifacts_index,
     }
     return ProcessVoiceResult(data=data, artifacts=artifacts)

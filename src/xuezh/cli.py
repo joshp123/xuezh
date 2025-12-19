@@ -20,6 +20,7 @@ from xuezh.core import (
     srs,
 )
 from xuezh.core.jsonio import dumps
+from xuezh.core.audio import AzureSpeechError
 from xuezh.core.process import ProcessFailedError, ToolMissingError
 
 app = typer.Typer(add_completion=False, help="xuezh - local Chinese learning engine (ZFC/Unix-style)")
@@ -484,6 +485,18 @@ def audio_assess(
     try:
         result = audio.assess_audio(ref_text=ref_text, in_path=in_path, backend=backend)
         out = envelope.ok(command="audio.assess", data=result.data, artifacts=result.artifacts)
+    except AzureSpeechError as exc:
+        error_type = "BACKEND_FAILED"
+        if exc.kind == "quota":
+            error_type = "QUOTA_EXCEEDED"
+        elif exc.kind == "auth":
+            error_type = "AUTH_FAILED"
+        out = envelope.err(
+            command="audio.assess",
+            error_type=error_type,
+            message=str(exc),
+            details={"ref_text": ref_text, "in": in_path, "backend": backend, **exc.details},
+        )
     except ToolMissingError as exc:
         out = envelope.err(
             command="audio.assess",
@@ -525,6 +538,18 @@ def audio_process_voice(
     try:
         result = audio.process_voice(in_path=in_path, ref_text=ref_text, backend=backend)
         out = envelope.ok(command="audio.process-voice", data=result.data, artifacts=result.artifacts)
+    except AzureSpeechError as exc:
+        error_type = "BACKEND_FAILED"
+        if exc.kind == "quota":
+            error_type = "QUOTA_EXCEEDED"
+        elif exc.kind == "auth":
+            error_type = "AUTH_FAILED"
+        out = envelope.err(
+            command="audio.process-voice",
+            error_type=error_type,
+            message=str(exc),
+            details={"ref_text": ref_text, "in": in_path, "backend": backend, **exc.details},
+        )
     except ToolMissingError as exc:
         out = envelope.err(
             command="audio.process-voice",

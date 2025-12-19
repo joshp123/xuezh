@@ -6,9 +6,11 @@ from typing import Final
 # Keep this list minimal and grow it only when a new type is actually emitted.
 KNOWN_ERROR_TYPES: Final[set[str]] = {
     "BACKEND_FAILED",
+    "AUTH_FAILED",
     "INVALID_ARGUMENT",
     "NOT_IMPLEMENTED",
     "NOT_FOUND",
+    "QUOTA_EXCEEDED",
     "TOOL_MISSING",
 }
 
