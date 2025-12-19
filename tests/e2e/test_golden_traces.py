@@ -63,6 +63,7 @@ def test_golden_traces(tmp_path):
     env = os.environ.copy()
     env["XUEZH_WORKSPACE_DIR"] = str(tmp_path)
     env["XUEZH_TEST_NOW_ISO"] = "2025-01-02T03:04:05+00:00"
+    env["XUEZH_AUDIO_PROCESS_VOICE_BACKEND"] = "azure.speech"
     os.environ["XUEZH_WORKSPACE_DIR"] = str(tmp_path)
     os.environ["XUEZH_TEST_NOW_ISO"] = "2025-01-02T03:04:05+00:00"
 

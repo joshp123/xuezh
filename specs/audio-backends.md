@@ -25,6 +25,19 @@ Public commands:
 
 Internal primitives (`audio.stt`, `audio.assess`) accept `--backend` but are not part of the public contract.
 
+Environment overrides (deterministic, explicit):
+- Global: `XUEZH_AUDIO_BACKEND=<BACKEND_ID>`
+- Per-command:
+  - `XUEZH_AUDIO_PROCESS_VOICE_BACKEND`
+  - `XUEZH_AUDIO_CONVERT_BACKEND`
+  - `XUEZH_AUDIO_TTS_BACKEND`
+
+Precedence:
+1) CLI flag (when present)
+2) Per-command env var
+3) Global env var
+4) Command default
+
 ## Azure Speech (pronunciation assessment)
 
 Backend id: `azure.speech`

@@ -84,21 +84,34 @@
       "cli": "xuezh audio convert --in IN --out OUT --format wav --backend ffmpeg --json",
       "schema_ok": "schemas/audio.convert.schema.json",
       "ticket": "T-08",
-      "example_cli": "xuezh audio convert --in IN --out OUT --format wav --backend ffmpeg --json"
+      "example_cli": "xuezh audio convert --in IN --out OUT --format wav --backend ffmpeg --json",
+      "env": {
+        "backend_global": "XUEZH_AUDIO_BACKEND",
+        "backend": "XUEZH_AUDIO_CONVERT_BACKEND"
+      }
     },
     {
       "id": "audio.tts",
       "cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --backend edge-tts --json",
       "schema_ok": "schemas/audio.tts.schema.json",
       "ticket": "T-08",
-      "example_cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --backend edge-tts --json"
+      "example_cli": "xuezh audio tts --text TEXT --voice XiaoxiaoNeural --out OUT.ogg --backend edge-tts --json",
+      "env": {
+        "backend_global": "XUEZH_AUDIO_BACKEND",
+        "backend": "XUEZH_AUDIO_TTS_BACKEND"
+      }
     },
     {
       "id": "audio.process-voice",
       "cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --json",
       "schema_ok": "schemas/audio.process-voice.schema.json",
       "ticket": "T-10",
-      "example_cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --json"
+      "example_cli": "xuezh audio process-voice --in voice.ogg --ref-text TEXT --json",
+      "env": {
+        "backend_global": "XUEZH_AUDIO_BACKEND",
+        "backend": "XUEZH_AUDIO_PROCESS_VOICE_BACKEND",
+        "default": "azure.speech"
+      }
     },
     {
       "id": "content.cache.put",

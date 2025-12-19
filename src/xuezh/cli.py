@@ -37,6 +37,13 @@ def _trim(text: str, limit: int = 2000) -> str:
     return text if len(text) <= limit else text[:limit]
 
 
+def _resolve_audio_backend(*, cli_value: str | None, default: str, env_key: str) -> str:
+    if cli_value:
+        return cli_value
+    env_value = os.environ.get(env_key) or os.environ.get("XUEZH_AUDIO_BACKEND")
+    return env_value or default
+
+
 # ---- Sub-apps (public CLI contract) ----
 db_app = typer.Typer(add_completion=False)
 dataset_app = typer.Typer(add_completion=False)
@@ -366,9 +373,14 @@ def audio_convert(
     in_path: str = typer.Option(..., "--in"),
     out_path: str = typer.Option(..., "--out"),
     format: str = typer.Option(..., "--format", help="wav|ogg|mp3"),
-    backend: str = typer.Option("ffmpeg", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
+    backend: str | None = typer.Option(None, "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
+    backend = _resolve_audio_backend(
+        cli_value=backend,
+        default="ffmpeg",
+        env_key="XUEZH_AUDIO_CONVERT_BACKEND",
+    )
     try:
         result = audio.convert_audio(in_path=in_path, out_path=out_path, fmt=format, backend=backend)
         out = envelope.ok(command="audio.convert", data=result.data, artifacts=result.artifacts)
@@ -409,9 +421,14 @@ def audio_tts(
     text: str = typer.Option(..., "--text"),
     voice: str = typer.Option("XiaoxiaoNeural", "--voice"),
     out_path: str = typer.Option(..., "--out"),
-    backend: str = typer.Option("edge-tts", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
+    backend: str | None = typer.Option(None, "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
+    backend = _resolve_audio_backend(
+        cli_value=backend,
+        default="edge-tts",
+        env_key="XUEZH_AUDIO_TTS_BACKEND",
+    )
     try:
         result = audio.tts_audio(text=text, voice=voice, out_path=out_path, backend=backend)
         out = envelope.ok(command="audio.tts", data=result.data, artifacts=result.artifacts)
@@ -453,7 +470,11 @@ def audio_process_voice(
     ref_text: str = typer.Option(..., "--ref-text"),
     json_output: bool = typer.Option(True, "--json"),
 ):
-    backend = "azure.speech"
+    backend = _resolve_audio_backend(
+        cli_value=None,
+        default="azure.speech",
+        env_key="XUEZH_AUDIO_PROCESS_VOICE_BACKEND",
+    )
     try:
         result = audio.process_voice(in_path=in_path, ref_text=ref_text, backend=backend)
         out = envelope.ok(command="audio.process-voice", data=result.data, artifacts=result.artifacts)

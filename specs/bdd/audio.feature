@@ -2,6 +2,7 @@ Feature: Audio processing pipeline
 
   Scenario: Process a voice note for pronunciation practice (audio in, audio out)
     Given a clean workspace
+    And env "XUEZH_AUDIO_PROCESS_VOICE_BACKEND" is "azure.speech"
 
     # Input: voice note (m4a)
     When the client runs "xuezh audio process-voice --in tests/fixtures/audio/voice_sample.m4a --ref-text '你好' --json"

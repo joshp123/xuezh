@@ -77,6 +77,11 @@ def given_clean_workspace(workspace: Path) -> None:
     assert workspace.exists()
 
 
+@given(parsers.parse('env "{key}" is "{value}"'))
+def given_env(key: str, value: str, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv(key, value)
+
+
 @when(parsers.parse('the client runs "{cmd}"'), target_fixture="when_client_runs")
 def when_client_runs(cmd: str, workspace: Path) -> Dict[str, Any]:
     out = _run_cli(cmd, workspace)

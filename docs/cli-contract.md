@@ -90,6 +90,15 @@ All commands return one of:
 - output schema: `schemas/audio.process-voice.schema.json`
 - default pronunciation backend: `azure.speech` (requires `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`)
 
+### audio backend selection (deterministic)
+- Global override: `XUEZH_AUDIO_BACKEND=<backend_id>`
+- Per-command overrides:
+  - `XUEZH_AUDIO_PROCESS_VOICE_BACKEND=<backend_id>`
+  - `XUEZH_AUDIO_CONVERT_BACKEND=<backend_id>`
+  - `XUEZH_AUDIO_TTS_BACKEND=<backend_id>`
+- CLI flags still apply for `audio convert` / `audio tts` (`--backend`); env vars override defaults.
+- Precedence: CLI flag > per-command env > global env > default.
+
 ### content cache put/get
 - `xuezh content cache put --type story|dialogue|exercise --key <hash> --in <file> --json`
 - `xuezh content cache get --type story|dialogue|exercise --key <hash> --json`
