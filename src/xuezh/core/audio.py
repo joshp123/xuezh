@@ -8,7 +8,7 @@ import shutil
 from pathlib import Path
 from uuid import uuid4
 
-from xuezh.core import clock, db, jsonio, paths
+from xuezh.core import clock, config as config_core, db, jsonio, paths
 from xuezh.core.envelope import Artifact
 from xuezh.core.process import ToolMissingError, ensure_tool, run_checked
 
@@ -16,7 +16,7 @@ SUPPORTED_FORMATS = {"wav", "ogg", "mp3"}
 VOICE_ALIASES = {
     "XiaoxiaoNeural": "zh-CN-XiaoxiaoNeural",
 }
-INLINE_DETAIL_MAX_BYTES = int(os.environ.get("XUEZH_AUDIO_INLINE_MAX_BYTES", "200000"))
+INLINE_DETAIL_MAX_BYTES_DEFAULT = 200_000
 
 
 @dataclass(frozen=True)
@@ -303,6 +303,19 @@ def _payload_bytes(*, assessment: dict, transcript: dict) -> int:
     return len(jsonio.dumps(payload).encode("utf-8"))
 
 
+def _inline_detail_max_bytes() -> int:
+    config_value = config_core.get_config_value("audio", "inline_max_bytes")
+    if isinstance(config_value, int) and config_value > 0:
+        return config_value
+    env_value = os.environ.get("XUEZH_AUDIO_INLINE_MAX_BYTES")
+    if env_value:
+        try:
+            return int(env_value)
+        except ValueError:
+            pass
+    return INLINE_DETAIL_MAX_BYTES_DEFAULT
+
+
 def _minimal_assessment(assessment: dict, artifacts_index: dict) -> dict:
     minimal: dict = {}
     overall = assessment.get("overall")
@@ -336,13 +349,14 @@ def _inline_pronunciation_payload(
     transcript: dict,
     artifacts_index: dict,
 ) -> tuple[dict, dict, bool]:
+    max_bytes = _inline_detail_max_bytes()
     detail_bytes = _payload_bytes(assessment=assessment, transcript=transcript)
-    if detail_bytes <= INLINE_DETAIL_MAX_BYTES:
+    if detail_bytes <= max_bytes:
         return assessment, transcript, False
     assessment_summary = _summarize_detail(assessment)
     transcript_summary = _summarize_detail(transcript)
     summary_bytes = _payload_bytes(assessment=assessment_summary, transcript=transcript_summary)
-    if summary_bytes <= INLINE_DETAIL_MAX_BYTES:
+    if summary_bytes <= max_bytes:
         return assessment_summary, transcript_summary, True
     preview_len = 2000
     text = transcript.get("text")
@@ -353,7 +367,7 @@ def _inline_pronunciation_payload(
     assessment_min = _minimal_assessment(assessment, artifacts_index)
     transcript_min = _minimal_transcript(transcript, artifacts_index, preview_len)
     minimal_bytes = _payload_bytes(assessment=assessment_min, transcript=transcript_min)
-    if minimal_bytes <= INLINE_DETAIL_MAX_BYTES:
+    if minimal_bytes <= max_bytes:
         return assessment_min, transcript_min, True
     transcript_min = _minimal_transcript(transcript, artifacts_index, 0)
     return assessment_min, transcript_min, True
@@ -392,14 +406,27 @@ def _load_speechsdk():
 def _azure_pronunciation_assess(*, ref_text: str, wav_path: Path) -> tuple[dict, dict, dict]:
     speechsdk = _load_speechsdk()
 
-    key = os.environ.get("AZURE_SPEECH_KEY")
-    region = os.environ.get("AZURE_SPEECH_REGION")
+    config_key = None
+    config_region = None
+    config_section = config_core.get_config_value("azure", "speech")
+    if isinstance(config_section, dict):
+        config_key = config_section.get("key")
+        key_file = config_section.get("key_file")
+        if key_file:
+            try:
+                config_key = Path(str(key_file)).expanduser().read_text(encoding="utf-8").strip()
+            except OSError:
+                config_key = None
+        config_region = config_section.get("region")
+
+    key = config_key or os.environ.get("AZURE_SPEECH_KEY")
+    region = config_region or os.environ.get("AZURE_SPEECH_REGION")
     if not key or not region:
         missing = []
         if not key:
-            missing.append("AZURE_SPEECH_KEY")
+            missing.append("AZURE_SPEECH_KEY or config.azure.speech.key/key_file")
         if not region:
-            missing.append("AZURE_SPEECH_REGION")
+            missing.append("AZURE_SPEECH_REGION or config.azure.speech.region")
         raise AzureSpeechError(
             "auth",
             f"Azure Speech credentials missing ({', '.join(missing)})",
@@ -643,5 +670,5 @@ def process_voice(*, in_path: str, ref_text: str, backend: str = "azure.speech")
     }
     limits = {}
     if inline_truncated:
-        limits = {"inline_bytes_max": INLINE_DETAIL_MAX_BYTES}
+        limits = {"inline_bytes_max": _inline_detail_max_bytes()}
     return ProcessVoiceResult(data=data, artifacts=artifacts, truncated=inline_truncated, limits=limits)

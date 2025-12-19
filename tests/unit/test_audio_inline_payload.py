@@ -6,7 +6,7 @@ import json
 def test_inline_payload_truncates_words(monkeypatch):
     from xuezh.core import audio
 
-    monkeypatch.setattr(audio, "INLINE_DETAIL_MAX_BYTES", 200)
+    monkeypatch.setenv("XUEZH_AUDIO_INLINE_MAX_BYTES", "200")
     assessment = {
         "overall": {"accuracy_score": 1.0},
         "words": [{"word": "x" * 50} for _ in range(20)],
@@ -31,7 +31,7 @@ def test_inline_payload_truncates_words(monkeypatch):
 def test_inline_payload_minimal_spill(monkeypatch):
     from xuezh.core import audio
 
-    monkeypatch.setattr(audio, "INLINE_DETAIL_MAX_BYTES", 150)
+    monkeypatch.setenv("XUEZH_AUDIO_INLINE_MAX_BYTES", "150")
     transcript_text = "x" * 1000
     assessment = {"overall": {"accuracy_score": 1.0}}
     transcript = {"text": transcript_text}

@@ -98,8 +98,25 @@ All commands return one of:
   - `XUEZH_AUDIO_PROCESS_VOICE_BACKEND=<backend_id>`
   - `XUEZH_AUDIO_CONVERT_BACKEND=<backend_id>`
   - `XUEZH_AUDIO_TTS_BACKEND=<backend_id>`
-- CLI flags still apply for `audio convert` / `audio tts` (`--backend`); env vars override defaults.
-- Precedence: CLI flag > per-command env > global env > default.
+- Config file: `~/.config/xuezh/config.toml` (or `$XDG_CONFIG_HOME/xuezh/config.toml`)
+  - `[audio] backend_global`, `process_voice_backend`, `convert_backend`, `tts_backend`
+- CLI flags still apply for `audio convert` / `audio tts` (`--backend`).
+- Precedence: CLI flag > config file > env vars > default.
+
+### config file (optional)
+Example:
+```
+[audio]
+backend_global = "azure.speech"
+process_voice_backend = "azure.speech"
+convert_backend = "ffmpeg"
+tts_backend = "edge-tts"
+inline_max_bytes = 200000
+
+[azure.speech]
+key_file = "/run/agenix/xuezh-azure-speech-key"
+region = "westeurope"
+```
 
 ### content cache put/get
 - `xuezh content cache put --type story|dialogue|exercise --key <hash> --in <file> --json`

@@ -3,11 +3,13 @@ from __future__ import annotations
 import os
 import shutil
 import sqlite3
+from pathlib import Path
 import typer
 
 from xuezh.core import (
     audio,
     clock,
+    config as config_core,
     content,
     datasets,
     db,
@@ -37,9 +39,22 @@ def _trim(text: str, limit: int = 2000) -> str:
     return text if len(text) <= limit else text[:limit]
 
 
-def _resolve_audio_backend(*, cli_value: str | None, default: str, env_key: str) -> str:
+def _resolve_audio_backend(
+    *,
+    cli_value: str | None,
+    default: str,
+    env_key: str,
+    config_key: str | None = None,
+) -> str:
     if cli_value:
         return cli_value
+    if config_key:
+        config_value = config_core.get_config_value("audio", config_key)
+        if isinstance(config_value, str) and config_value.strip():
+            return config_value
+    config_global = config_core.get_config_value("audio", "backend_global")
+    if isinstance(config_global, str) and config_global.strip():
+        return config_global
     env_value = os.environ.get(env_key) or os.environ.get("XUEZH_AUDIO_BACKEND")
     return env_value or default
 
@@ -150,13 +165,35 @@ def doctor(json_output: bool = typer.Option(True, "--json")):
     except Exception as exc:
         checks.append({"name": "tool.azure-speech-sdk", "ok": False, "details": {"error": str(exc)}})
 
+    config_section = config_core.get_config_value("azure", "speech")
+    config_key = None
+    config_region = None
+    config_key_file = None
+    if isinstance(config_section, dict):
+        config_key = config_section.get("key")
+        config_key_file = config_section.get("key_file")
+        config_region = config_section.get("region")
+    config_key_present = bool(config_key)
+    if config_key_file:
+        try:
+            config_key_present = bool(Path(str(config_key_file)).expanduser().read_text(encoding="utf-8").strip())
+        except OSError:
+            config_key_present = False
+
+    env_key_present = bool(os.environ.get("AZURE_SPEECH_KEY"))
+    env_region_present = bool(os.environ.get("AZURE_SPEECH_REGION"))
+    config_region_present = bool(config_region)
+
     checks.append(
         {
             "name": "azure.speech.env",
-            "ok": bool(os.environ.get("AZURE_SPEECH_KEY") and os.environ.get("AZURE_SPEECH_REGION")),
+            "ok": bool((env_key_present or config_key_present) and (env_region_present or config_region_present)),
             "details": {
-                "AZURE_SPEECH_KEY": bool(os.environ.get("AZURE_SPEECH_KEY")),
-                "AZURE_SPEECH_REGION": bool(os.environ.get("AZURE_SPEECH_REGION")),
+                "AZURE_SPEECH_KEY": env_key_present,
+                "AZURE_SPEECH_REGION": env_region_present,
+                "config_key": config_key_present,
+                "config_region": config_region_present,
+                "config_path": str(config_core.config_path()),
             },
         }
     )
@@ -380,6 +417,7 @@ def audio_convert(
         cli_value=backend,
         default="ffmpeg",
         env_key="XUEZH_AUDIO_CONVERT_BACKEND",
+        config_key="convert_backend",
     )
     try:
         result = audio.convert_audio(in_path=in_path, out_path=out_path, fmt=format, backend=backend)
@@ -428,6 +466,7 @@ def audio_tts(
         cli_value=backend,
         default="edge-tts",
         env_key="XUEZH_AUDIO_TTS_BACKEND",
+        config_key="tts_backend",
     )
     try:
         result = audio.tts_audio(text=text, voice=voice, out_path=out_path, backend=backend)
@@ -474,6 +513,7 @@ def audio_process_voice(
         cli_value=None,
         default="azure.speech",
         env_key="XUEZH_AUDIO_PROCESS_VOICE_BACKEND",
+        config_key="process_voice_backend",
     )
     try:
         result = audio.process_voice(in_path=in_path, ref_text=ref_text, backend=backend)

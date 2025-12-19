@@ -5,12 +5,20 @@
 
 from __future__ import annotations
 
+import os
+from pathlib import Path
 import pytest
 
 # Register pytest-bdd step definitions as a pytest plugin so fixtures are discoverable.
 pytest_plugins = ["tests.bdd.steps"]
 
 _SKIP_COUNT = 0
+
+
+def pytest_configure() -> None:
+    if "XUEZH_CONFIG_PATH" not in os.environ:
+        path = Path(__file__).resolve().parents[1] / ".xuezh-test-config.toml"
+        os.environ["XUEZH_CONFIG_PATH"] = str(path)
 
 
 def pytest_runtest_logreport(report: pytest.TestReport) -> None:
