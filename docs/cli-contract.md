@@ -63,10 +63,10 @@ All commands return one of:
 - command id: `srs.preview`
 
 ### report hsk
-- `xuezh report hsk --level 1..6|7-9 --window 30d --max-items 200 --max-bytes 200000 [--include-chars] --json`
+- `xuezh report hsk --level 1..6 --window 30d --max-items 200 --max-bytes 200000 --json`
 - command id: `report.hsk`
 - output schema: `schemas/report.hsk.schema.json`
-- coverage includes `known/unknown` splits; counts by level preserve upstream labels (e.g. `"7-9"`)
+- coverage includes `known/unknown` splits per level (vocab + grammar only)
 
 ### report mastery
 - `xuezh report mastery --item-type word|character|grammar --window 90d --max-items 200 --max-bytes 200000 --json`

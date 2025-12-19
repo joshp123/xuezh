@@ -88,30 +88,6 @@
                 }
               },
               "additionalProperties": true
-            },
-            "chars": {
-              "type": "object",
-              "required": [
-                "total",
-                "known",
-                "unknown",
-                "coverage_pct"
-              ],
-              "properties": {
-                "total": {
-                  "type": "integer"
-                },
-                "known": {
-                  "type": "integer"
-                },
-                "unknown": {
-                  "type": "integer"
-                },
-                "coverage_pct": {
-                  "type": "number"
-                }
-              },
-              "additionalProperties": true
             }
           },
           "additionalProperties": true
@@ -147,33 +123,6 @@
               }
             },
             "grammar": {
-              "type": "object",
-              "additionalProperties": {
-                "type": "object",
-                "required": [
-                  "total",
-                  "known",
-                  "unknown",
-                  "coverage_pct"
-                ],
-                "properties": {
-                  "total": {
-                    "type": "integer"
-                  },
-                  "known": {
-                    "type": "integer"
-                  },
-                  "unknown": {
-                    "type": "integer"
-                  },
-                  "coverage_pct": {
-                    "type": "number"
-                  }
-                },
-                "additionalProperties": true
-              }
-            },
-            "chars": {
               "type": "object",
               "additionalProperties": {
                 "type": "object",
