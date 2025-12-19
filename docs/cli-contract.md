@@ -84,18 +84,11 @@ All commands return one of:
 - `xuezh audio tts --text "<text>" --voice "<voice>" --out <path> --backend edge-tts --json`
 - command id: `audio.tts`
 
-### audio stt
-- `xuezh audio stt --in <path> --backend whisper --json`
-- command id: `audio.stt`
-
-### audio assess
-- `xuezh audio assess --ref-text "<text>" --in <path> --backend <backend_id> --json`
-- command id: `audio.assess`
-
 ### audio process-voice
-- `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --backend <backend_id> --json`
+- `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --json`
 - command id: `audio.process-voice`
 - output schema: `schemas/audio.process-voice.schema.json`
+- default pronunciation backend: `azure.speech` (requires `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`)
 
 ### content cache put/get
 - `xuezh content cache put --type story|dialogue|exercise --key <hash> --in <file> --json`

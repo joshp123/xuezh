@@ -14,8 +14,12 @@
 
   packages = with pkgs; [
     git
-        gh
+    gh
     jq
+
+    # Azure provisioning + IaC
+    azure-cli
+    opentofu
 
     # Audio / media tools used by the engine wrappers
     ffmpeg
@@ -28,5 +32,13 @@
   enterShell = ''
     echo "Entered devenv shell for xuezh."
     echo "Reminder: do not use brew/global installs; update devenv.nix instead."
+
+    # Load Azure Speech creds from nix-secrets (agenix) without touching global nixos-config
+    if command -v agenix >/dev/null 2>&1; then
+      if [[ -f "$HOME/code/nix-secrets/xuezh-azure-speech-key.age" ]]; then
+        export AZURE_SPEECH_KEY="$(cd "$HOME/code/nix-secrets" && RULES=./secrets.nix agenix -d xuezh-azure-speech-key.age)"
+      fi
+    fi
+    export AZURE_SPEECH_REGION="westeurope"
   '';
 }

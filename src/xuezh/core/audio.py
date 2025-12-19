@@ -324,7 +324,16 @@ def _azure_pronunciation_assess(*, ref_text: str, wav_path: Path) -> tuple[dict,
     key = os.environ.get("AZURE_SPEECH_KEY")
     region = os.environ.get("AZURE_SPEECH_REGION")
     if not key or not region:
-        raise ValueError("Azure Speech credentials missing (AZURE_SPEECH_KEY, AZURE_SPEECH_REGION)")
+        missing = []
+        if not key:
+            missing.append("AZURE_SPEECH_KEY")
+        if not region:
+            missing.append("AZURE_SPEECH_REGION")
+        raise AzureSpeechError(
+            "auth",
+            f"Azure Speech credentials missing ({', '.join(missing)})",
+            {"missing": missing},
+        )
 
     speech_config = speechsdk.SpeechConfig(subscription=key, region=region)
     speech_config.speech_recognition_language = "zh-CN"
@@ -469,7 +478,7 @@ def _store_pronunciation_attempt(
     return attempt_id
 
 
-def process_voice(*, in_path: str, ref_text: str, backend: str) -> ProcessVoiceResult:
+def process_voice(*, in_path: str, ref_text: str, backend: str = "azure.speech") -> ProcessVoiceResult:
     if backend not in {"local", "azure.speech"}:
         raise ValueError(f"Unsupported backend: {backend}")
 

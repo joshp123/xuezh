@@ -4,7 +4,7 @@ Audio commands (`xuezh audio ...`) are implemented via **pluggable backends**.
 
 ZFC/Unix boundary rule:
 - The engine never auto-selects a backend via heuristics.
-- Backend choice must be **explicit and auditable**.
+- Backend choice must be **explicit and auditable** (via fixed defaults or explicit flags).
 
 ## Backend IDs
 
@@ -15,18 +15,20 @@ Backend IDs are stable strings (opaque identifiers). Examples:
 - `local` (local/dev pronunciation assessment)
 - `azure.speech` (paid/online backend; requires secrets)
 
-The contract does not enumerate allowed IDs; it only defines how they are passed and reported.
+The contract does not enumerate allowed IDs; it only defines how they are reported.
 
 ## Selection
 
-Every `xuezh audio <cmd>` supports:
-- `--backend <BACKEND_ID>`
+Public commands:
+- `audio.convert` and `audio.tts` accept `--backend <BACKEND_ID>`.
+- `audio.process-voice` does **not** expose a backend override; it uses a documented default.
 
-If omitted, each command uses its documented default backend.
+Internal primitives (`audio.stt`, `audio.assess`) accept `--backend` but are not part of the public contract.
 
 ## Azure Speech (pronunciation assessment)
 
 Backend id: `azure.speech`
+Default for `audio.process-voice`.
 
 Requirements:
 - `AZURE_SPEECH_KEY`

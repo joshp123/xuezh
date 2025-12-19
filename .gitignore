@@ -12,3 +12,9 @@ build/
 .devenv/
 .devenv*
 workspace/
+
+# Terraform/OpenTofu
+**/.terraform/
+**/.terraform.lock.hcl
+**/*.tfstate
+**/*.tfstate.*

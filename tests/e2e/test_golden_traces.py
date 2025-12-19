@@ -97,11 +97,9 @@ def test_golden_traces(tmp_path):
         "audio",
         "process-voice",
         "--in",
-        str(FIXTURES / "audio" / "voice_min.ogg"),
+        str(FIXTURES / "audio" / "voice_sample.m4a"),
         "--ref-text",
         "你好",
-        "--backend",
-        "local",
         "--json",
     )
 

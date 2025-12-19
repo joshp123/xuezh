@@ -1,19 +1,25 @@
 {
   "artifacts": [
     {
-      "bytes": 32078,
+      "bytes": 138660,
       "mime": "audio/wav",
       "path": "artifacts/2025/01/02/normalized-input-20250102T030405Z.wav",
       "purpose": "normalized_input"
     },
     {
-      "bytes": 55,
+      "bytes": 1603,
       "mime": "application/json",
-      "path": "artifacts/2025/01/02/stt-normalized-input-20250102T030405Z-20250102T030405Z.json",
+      "path": "artifacts/2025/01/02/transcript-20250102T030405Z.json",
       "purpose": "transcript"
     },
     {
-      "bytes": 110,
+      "bytes": 2636,
+      "mime": "application/json",
+      "path": "artifacts/2025/01/02/azure-response-20250102T030405Z.json",
+      "purpose": "azure_response"
+    },
+    {
+      "bytes": 1780,
       "mime": "application/json",
       "path": "artifacts/2025/01/02/assessment-20250102T030405Z.json",
       "purpose": "assessment"
@@ -29,18 +35,19 @@
   "data": {
     "artifacts_index": {
       "assessment": "artifacts/2025/01/02/assessment-20250102T030405Z.json",
+      "azure_response": "artifacts/2025/01/02/azure-response-20250102T030405Z.json",
       "feedback_voice_note": "artifacts/2025/01/02/feedback-voice-20250102T030405Z.ogg",
       "normalized_input": "artifacts/2025/01/02/normalized-input-20250102T030405Z.wav",
-      "transcript": "artifacts/2025/01/02/stt-normalized-input-20250102T030405Z-20250102T030405Z.json"
+      "transcript": "artifacts/2025/01/02/transcript-20250102T030405Z.json"
     },
     "backend": {
       "features": [
         "assessment",
         "tts",
-        "stt",
-        "convert"
+        "convert",
+        "azure.speech"
       ],
-      "id": "local"
+      "id": "azure.speech"
     },
     "ref_text": "你好"
   },

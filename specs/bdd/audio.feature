@@ -3,8 +3,8 @@ Feature: Audio processing pipeline
   Scenario: Process a voice note for pronunciation practice (audio in, audio out)
     Given a clean workspace
 
-    # Input: Telegram-style voice note (ogg/opus)
-    When the client runs "xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text '你好' --backend local --json"
+    # Input: voice note (m4a)
+    When the client runs "xuezh audio process-voice --in tests/fixtures/audio/voice_sample.m4a --ref-text '你好' --json"
     Then the engine returns an OK envelope
     And the output matches the command-specific JSON schema
     And the engine does not return recommendation fields
@@ -26,20 +26,6 @@ Scenario: Convert audio file formats (mechanical)
 Scenario: TTS produces a voice note artifact
   Given a clean workspace
   When the client runs "xuezh audio tts --text '你好' --voice XiaoxiaoNeural --out {workspace}/artifacts/tts.ogg --backend edge-tts --json"
-  Then the engine returns an OK envelope
-  And the output matches the command-specific JSON schema
-  And the engine does not return recommendation fields
-
-Scenario: STT returns a transcript artifact
-  Given a clean workspace
-  When the client runs "xuezh audio stt --in tests/fixtures/audio/sine_440hz.wav --backend whisper --json"
-  Then the engine returns an OK envelope
-  And the output matches the command-specific JSON schema
-  And the engine does not return recommendation fields
-
-Scenario: Pronunciation assessment returns an assessment artifact
-  Given a clean workspace
-  When the client runs "xuezh audio assess --ref-text '你好' --in tests/fixtures/audio/voice_min.ogg --backend local --json"
   Then the engine returns an OK envelope
   And the output matches the command-specific JSON schema
   And the engine does not return recommendation fields

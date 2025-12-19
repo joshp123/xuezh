@@ -127,7 +127,7 @@ def doctor(json_output: bool = typer.Option(True, "--json")):
     else:
         checks.append({"name": "db.status", "ok": False, "details": db_details})
 
-    for tool in ("ffmpeg", "edge-tts", "whisper"):
+    for tool in ("ffmpeg", "edge-tts"):
         path = shutil.which(tool)
         checks.append(
             {
@@ -136,6 +136,23 @@ def doctor(json_output: bool = typer.Option(True, "--json")):
                 "details": {"path": path},
             }
         )
+
+    try:
+        import azure.cognitiveservices.speech as speechsdk  # type: ignore
+        checks.append({"name": "tool.azure-speech-sdk", "ok": True, "details": {"version": speechsdk.__version__}})
+    except Exception as exc:
+        checks.append({"name": "tool.azure-speech-sdk", "ok": False, "details": {"error": str(exc)}})
+
+    checks.append(
+        {
+            "name": "azure.speech.env",
+            "ok": bool(os.environ.get("AZURE_SPEECH_KEY") and os.environ.get("AZURE_SPEECH_REGION")),
+            "details": {
+                "AZURE_SPEECH_KEY": bool(os.environ.get("AZURE_SPEECH_KEY")),
+                "AZURE_SPEECH_REGION": bool(os.environ.get("AZURE_SPEECH_REGION")),
+            },
+        }
+    )
 
     out = envelope.ok(command="doctor", data={"checks": checks})
     _emit(out)
@@ -430,111 +447,13 @@ def audio_tts(
     _emit(out)
 
 
-@audio_app.command("stt")
-def audio_stt(
-    in_path: str = typer.Option(..., "--in"),
-    backend: str = typer.Option("whisper", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
-    json_output: bool = typer.Option(True, "--json"),
-):
-    try:
-        result = audio.stt_audio(in_path=in_path, backend=backend)
-        out = envelope.ok(
-            command="audio.stt",
-            data=result.data,
-            artifacts=result.artifacts,
-            truncated=result.truncated,
-            limits=result.limits,
-        )
-    except ToolMissingError as exc:
-        out = envelope.err(
-            command="audio.stt",
-            error_type="TOOL_MISSING",
-            message=str(exc),
-            details={"tool": exc.tool, "in": in_path, "backend": backend},
-        )
-    except ProcessFailedError as exc:
-        out = envelope.err(
-            command="audio.stt",
-            error_type="BACKEND_FAILED",
-            message="audio backend failed during transcription",
-            details={
-                "cmd": exc.cmd,
-                "returncode": exc.returncode,
-                "stderr": _trim(exc.stderr),
-                "in": in_path,
-                "backend": backend,
-            },
-        )
-    except (ValueError, FileNotFoundError) as exc:
-        out = envelope.err(
-            command="audio.stt",
-            error_type="INVALID_ARGUMENT",
-            message=str(exc),
-            details={"in": in_path, "backend": backend},
-        )
-    _emit(out)
-
-
-@audio_app.command("assess")
-def audio_assess(
-    ref_text: str = typer.Option(..., "--ref-text"),
-    in_path: str = typer.Option(..., "--in"),
-    backend: str = typer.Option("local", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
-    json_output: bool = typer.Option(True, "--json"),
-):
-    try:
-        result = audio.assess_audio(ref_text=ref_text, in_path=in_path, backend=backend)
-        out = envelope.ok(command="audio.assess", data=result.data, artifacts=result.artifacts)
-    except AzureSpeechError as exc:
-        error_type = "BACKEND_FAILED"
-        if exc.kind == "quota":
-            error_type = "QUOTA_EXCEEDED"
-        elif exc.kind == "auth":
-            error_type = "AUTH_FAILED"
-        out = envelope.err(
-            command="audio.assess",
-            error_type=error_type,
-            message=str(exc),
-            details={"ref_text": ref_text, "in": in_path, "backend": backend, **exc.details},
-        )
-    except ToolMissingError as exc:
-        out = envelope.err(
-            command="audio.assess",
-            error_type="TOOL_MISSING",
-            message=str(exc),
-            details={"tool": exc.tool, "ref_text": ref_text, "in": in_path, "backend": backend},
-        )
-    except ProcessFailedError as exc:
-        out = envelope.err(
-            command="audio.assess",
-            error_type="BACKEND_FAILED",
-            message="audio backend failed during assessment",
-            details={
-                "cmd": exc.cmd,
-                "returncode": exc.returncode,
-                "stderr": _trim(exc.stderr),
-                "ref_text": ref_text,
-                "in": in_path,
-                "backend": backend,
-            },
-        )
-    except (ValueError, FileNotFoundError) as exc:
-        out = envelope.err(
-            command="audio.assess",
-            error_type="INVALID_ARGUMENT",
-            message=str(exc),
-            details={"ref_text": ref_text, "in": in_path, "backend": backend},
-        )
-    _emit(out)
-
-
 @audio_app.command("process-voice")
 def audio_process_voice(
     in_path: str = typer.Option(..., "--in"),
     ref_text: str = typer.Option(..., "--ref-text"),
-    backend: str = typer.Option("local", "--backend", help="Audio backend id (see specs/audio-backends.md)"),
     json_output: bool = typer.Option(True, "--json"),
 ):
+    backend = "azure.speech"
     try:
         result = audio.process_voice(in_path=in_path, ref_text=ref_text, backend=backend)
         out = envelope.ok(command="audio.process-voice", data=result.data, artifacts=result.artifacts)

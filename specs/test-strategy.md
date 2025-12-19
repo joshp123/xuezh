@@ -38,7 +38,7 @@ Scope:
   - e2e: import HSK dataset fixture, log exposures, report coverage
 
 - specs/bdd/audio.feature:
-  - integration: `audio convert`, `audio tts`, `audio stt`, `audio process-voice`
+  - integration: `audio convert`, `audio tts`, `audio process-voice`
   - e2e: run on a fixture audio file (or mocked tool calls)
 
 - specs/bdd/zfc.feature:
