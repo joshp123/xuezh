@@ -485,7 +485,6 @@ def _azure_pronunciation_assess(*, ref_text: str, wav_path: Path) -> tuple[dict,
 
     transcript = {
         "text": display_text or "",
-        "words": words,
     }
 
     assessment = {
