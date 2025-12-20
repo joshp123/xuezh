@@ -14,4 +14,4 @@ Feature: HSK audit reporting
     And the output matches the command-specific JSON schema
     And the engine does not return recommendation fields
 
-        # report.hsk schema requires coverage.vocab and coverage.grammar (chars optional via --include-chars).
+        # report.hsk schema requires coverage.vocab and coverage.grammar (chars out of scope for v1).

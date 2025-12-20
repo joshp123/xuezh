@@ -335,7 +335,7 @@ Stop early unless the user explicitly asks for more.
 - pick a short phrase (<= 7 syllables)
 - generate reference audio via `audio tts`
 - user sends voice note
-- `audio process-voice ...` (local v0 assessment uses transcript match only)
+- `audio process-voice ...` (local v0 assessment uses transcript match only when selected)
 - give 1–2 fixes, retry once
 
 ### /story style
@@ -366,7 +366,7 @@ xuezh review grade --item w_aaaaaaaaaaaa --grade 4 --next-due 2025-01-02T03:04:0
 ### Speaking loop (Telegram voice note)
 ```
 xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out {workspace}/artifacts/tts.ogg --backend edge-tts --json
-xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text "你好" --backend local --json
+xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text "你好" --json
 ```
 
 ### Content cache + logging

@@ -59,7 +59,7 @@ As a learner, I can request HSK coverage/compliance reports with evidence rows.
 
 Requirements:
 - report distinguishes **vocabulary** vs **grammar**
-- characters are optional via `--include-chars` (see `specs/hsk-scope.md`)
+- characters are out of scope for v1 (see `specs/hsk-scope.md`)
 - report includes bounded evidence rows and can spill to artifacts when needed
 
 ## UR-09: ZFC boundary (no recommendations)
