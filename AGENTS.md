@@ -1,6 +1,54 @@
-# agents.md — Implementation rules (read before touching code)
+# AGENTS.md — Project operating rules (read before touching code)
+
+This is the root AGENTS.md per the agentsmd.io convention. Subdirectories may
+add their own AGENTS.md when needed.
 
 You are implementing `xuezh`, a local Chinese learning engine used behind a Telegram bot + SOTA LLM.
+
+Start here:
+- Documentation authority map: `docs/README.md`
+- Repo overview + usage: `README.md`
+
+Authoritative surfaces (must stay in sync):
+1) **CLI contract (human)**: `docs/cli-contract.md`
+2) **CLI contract (machine)**: `specs/cli/contract.json`
+3) **Output schemas**: `schemas/`
+4) **Executable BDD specs**: `specs/bdd/`
+5) **Contract sync tests**: `tests/contract/`
+
+High-signal supporting specs (treat as binding):
+- ZFC boundary + invariants: `specs/invariants.md`, `docs/architecture.md`
+- North stars + URs: `specs/north-stars.md`, `specs/user-requirements.md`
+- IDs, events, retention: `specs/id-scheme.md`, `specs/events.md`, `specs/artifacts/retention.md`
+- Audio backend policy: `specs/audio-backends.md`
+- HSK scope: `specs/hsk-scope.md`
+- Skill reference (consumer contract): `skills/chinese-learning-orchestrator/SKILL.md`
+
+Issue tracking:
+- Beads: use `bd` (see `bd --help` / `bd onboard`)
+
+First steps for a new agent:
+1) `bd ready` → pick a ticket
+2) `bd show <id>` → read acceptance + constraints
+3) `direnv allow` → load `devenv`
+4) `devenv shell` → enter project env
+5) `./scripts/check.sh` → verify baseline
+
+Repo layout (what lives where):
+- `src/xuezh/`: core engine + CLI entry points
+- `specs/`: specs, contracts, and executable BDD feature files
+- `schemas/`: JSON schemas for CLI command outputs
+- `tests/`: unit + contract sync tests
+- `skills/`: LLM skill docs + examples (consumer contract)
+- `tickets/`: implementation tickets (source of work)
+- `docs/`: architecture + contract docs + reference material
+
+Working a ticket (minimum steps):
+1) Read `tickets/<id>.md` and confirm North Star + UR mapping
+2) Verify contract impacts against `docs/README.md` authority map
+3) Update tests first (RGR), then code, then docs
+4) Run `./scripts/check.sh`
+5) Update ticket notes and close it
 
 ## North stars (must be referenced in every ticket)
 
@@ -17,6 +65,10 @@ See `specs/north-stars.md`.
    - System tools belong in `devenv.nix`.
    - Python deps belong in `pyproject.toml` and are installed in the devenv venv.
 
+   Quick setup:
+   - `direnv allow`
+   - `devenv shell`
+
 2) **ZFC compliance**
    - Engine must never do:
      - ranking/scoring/selection heuristics
@@ -27,6 +79,10 @@ See `specs/north-stars.md`.
      - bounded reports (facts)
      - mechanical transforms (audio conversion, schedule rule application when explicitly chosen)
 
+   Concrete guardrails (see `specs/invariants.md`):
+   - Do not add “best next lesson” logic or scoring/ranking logic.
+   - Any selection must be externally provided or explicitly specified by the user.
+
 3) **Single-user system**
    - Do not implement multi-user features.
    - No `--user` flags. Workspace represents the single learner.
@@ -36,6 +92,14 @@ See `specs/north-stars.md`.
    - `specs/cli/contract.json` is the machine-readable source of truth.
    - `schemas/` must match actual outputs.
    - BDD features must match the CLI and schemas.
+
+   Contract change checklist:
+   - Update `docs/cli-contract.md` + `specs/cli/contract.json`
+   - Update `schemas/<command>.schema.json`
+   - Update/add `specs/bdd/*.feature`
+   - Update contract sync tests in `tests/contract/` if needed
+
+   Contract drift will fail `tests/contract/` — fix the contract, schema, and BDD in the same ticket.
 
 ## RGR workflow (required)
 
@@ -92,6 +156,10 @@ Before starting tickets:
   - run `./scripts/check.sh`
   - commit **once** with message: `T-XX: <ticket title>`
   - **no fixup commits**, no “WIP” commits
+
+Non-human commits:
+- Any automated/agent commit must set an explicit author identifying the agent
+  (e.g., `Codex <codex@openai.com>`), not a human identity.
 - If you made intermediate commits locally, you must squash into a single commit before pushing.
 
 ### Pushing
