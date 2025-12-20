@@ -149,7 +149,7 @@ def doctor(json_output: bool = typer.Option(True, "--json")):
     else:
         checks.append({"name": "db.status", "ok": False, "details": db_details})
 
-    for tool in ("ffmpeg", "edge-tts"):
+    for tool in ("ffmpeg", "edge-tts", "whisper"):
         path = shutil.which(tool)
         checks.append(
             {
