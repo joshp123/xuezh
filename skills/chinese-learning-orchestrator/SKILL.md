@@ -349,6 +349,27 @@ Stop early unless the user explicitly asks for more.
 - Use bold sparingly.
 - Always end with “Next time (tiny): …”
 
+## Recall vs pronunciation grading (separate vectors)
+Recall (can you recognize/understand it?):
+- 5: instant recognition
+- 4: quick recognition
+- 3: recognized with effort
+- 2: partial / needed hint
+- 1: failed to recognize
+- 0: blank
+
+Pronunciation (can you say it clearly?):
+- 5: native-like (≈95%+ Azure score)
+- 4: clear and understood (≈85–94%)
+- 3: understandable with accent (≈70–84%)
+- 2: difficult to understand (≈50–69%)
+- 1: major errors (<50%)
+- 0: not attempted
+
+Rule for new words:
+- First exposure: recall grade ≤ 2 (even if pronunciation is good)
+- Pronunciation grade is independent (use actual score)
+
 ## Copy/paste examples (verified commands only)
 
 ### Snapshot + HSK audit
@@ -360,7 +381,7 @@ xuezh report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --jso
 ### Review loop
 ```
 xuezh review start --limit 10 --json
-xuezh review grade --item w_aaaaaaaaaaaa --grade 4 --next-due 2025-01-02T03:04:05+00:00 --json
+xuezh review grade --item w_aaaaaaaaaaaa --recall 4 --pronunciation 2 --next-due 2025-01-02T03:04:05+00:00 --json
 ```
 
 ### Speaking loop (Telegram voice note)

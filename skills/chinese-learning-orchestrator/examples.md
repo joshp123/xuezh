@@ -7,7 +7,7 @@ These examples assume the authoritative CLI contract in `docs/cli-contract.md`.
 xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json
 xuezh review start --limit 10 --json
 # ... user attempts ...
-xuezh review grade --item w_aaaaaaaaaaaa --grade 4 --json
+xuezh review grade --item w_aaaaaaaaaaaa --recall 4 --pronunciation 2 --json
 ```
 
 ## Tone practice (word-level)

@@ -24,9 +24,31 @@
     "data": {
       "type": "object",
       "required": [
-        "item",
-        "grade"
-      ]
+        "item"
+      ],
+      "properties": {
+        "item": {
+          "type": "string"
+        },
+        "grade": {
+          "type": "integer"
+        },
+        "next_due": {
+          "type": "string"
+        },
+        "recall_grade": {
+          "type": "integer"
+        },
+        "recall_next_due": {
+          "type": "string"
+        },
+        "pronunciation_grade": {
+          "type": "integer"
+        },
+        "pronunciation_next_due": {
+          "type": "string"
+        }
+      }
     },
     "artifacts": {
       "type": "array"

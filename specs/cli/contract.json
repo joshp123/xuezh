@@ -39,10 +39,10 @@
     },
     {
       "id": "review.grade",
-      "cli": "xuezh review grade --item ITEM --grade 4 --json",
+      "cli": "xuezh review grade --item ITEM --recall 4 --pronunciation 2 --json",
       "schema_ok": "schemas/review.grade.schema.json",
       "ticket": "T-06",
-      "example_cli": "xuezh review grade --item ITEM --grade 4 --json"
+      "example_cli": "xuezh review grade --item ITEM --recall 4 --pronunciation 2 --json"
     },
     {
       "id": "review.bury",

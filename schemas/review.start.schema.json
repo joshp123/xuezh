@@ -25,7 +25,21 @@
       "type": "object",
       "required": [
         "items"
-      ]
+      ],
+      "properties": {
+        "items": {
+          "type": "array"
+        },
+        "recall_items": {
+          "type": "array"
+        },
+        "pronunciation_items": {
+          "type": "array"
+        },
+        "generated_at": {
+          "type": "string"
+        }
+      }
     },
     "artifacts": {
       "type": "array"

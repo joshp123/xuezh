@@ -105,6 +105,15 @@ $ xuezh audio tts --text "你好" --json
 {"ok":true,"schema_version":"1.0","command":"audio.tts","data":{"voice":"zh-CN-XiaoxiaoNeural"},"artifacts":[{"purpose":"audio_tts","path":"artifacts/audio/tts/....wav"}],"truncated":false,"limits":{}}
 ```
 
+SRS review (recall vs pronunciation):
+```text
+$ xuezh review start --json
+$ xuezh review grade --item w_xxx --recall 4 --pronunciation 2 --json
+```
+Notes:
+- `review start` returns separate `recall_items` and `pronunciation_items` queues.
+- The `--grade` flag applies to recall only.
+
 ## Key idea
 
 - **Model = smart endpoint** (lesson planning, choosing what to teach next, pedagogy)

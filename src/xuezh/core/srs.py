@@ -12,6 +12,7 @@ from xuezh.core import clock, db, ids
 class DueItem:
     item_id: str
     due_at: str
+    review_type: str
 
 
 def _interval_days(rule: str, grade: int) -> int:
@@ -33,21 +34,30 @@ def schedule_next_due(*, grade: int, now: datetime, rule: str | None, next_due: 
     return due_at.isoformat(), applied_rule
 
 
-def list_due_items(*, limit: int, now: datetime) -> list[DueItem]:
+def _due_expr(review_type: str) -> str:
+    if review_type == "recall":
+        return "COALESCE(recall_due_at, due_at)"
+    if review_type == "pronunciation":
+        return "pronunciation_due_at"
+    raise ValueError(f"Unsupported review type: {review_type}")
+
+
+def list_due_items(*, limit: int, now: datetime, review_type: str = "recall") -> list[DueItem]:
+    due_expr = _due_expr(review_type)
     db_path = db.init_db()
     conn = sqlite3.connect(db_path)
     try:
         rows = conn.execute(
-            """
-            SELECT item_id, due_at
+            f"""
+            SELECT item_id, {due_expr}
             FROM user_knowledge
-            WHERE due_at IS NOT NULL AND due_at <= ?
-            ORDER BY due_at ASC, item_id ASC
+            WHERE {due_expr} IS NOT NULL AND {due_expr} <= ?
+            ORDER BY {due_expr} ASC, item_id ASC
             LIMIT ?
             """,
             (now.isoformat(), limit),
         ).fetchall()
-        return [DueItem(item_id=row[0], due_at=row[1]) for row in rows]
+        return [DueItem(item_id=row[0], due_at=row[1], review_type=review_type) for row in rows]
     finally:
         conn.close()
 
@@ -78,10 +88,14 @@ def record_review_event(
 def upsert_knowledge(
     *,
     item_id: str,
-    due_at: str,
-    grade: int | None,
+    recall_due_at: str | None = None,
+    recall_grade: int | None = None,
+    pronunciation_due_at: str | None = None,
+    pronunciation_grade: int | None = None,
     now: datetime,
 ) -> None:
+    if recall_due_at is None and pronunciation_due_at is None:
+        return
     db_path = db.init_db()
     conn = sqlite3.connect(db_path)
     try:
@@ -92,34 +106,72 @@ def upsert_knowledge(
         ).fetchone()
         if row:
             seen_count = int(row[0]) + 1
+            updates = []
+            params: list[object] = []
+            if recall_due_at is not None:
+                updates.extend(["recall_due_at = ?", "recall_last_grade = ?", "due_at = ?", "last_grade = ?"])
+                params.extend([recall_due_at, recall_grade, recall_due_at, recall_grade])
+            if pronunciation_due_at is not None:
+                updates.extend(["pronunciation_due_at = ?", "pronunciation_last_grade = ?"])
+                params.extend([pronunciation_due_at, pronunciation_grade])
+            updates.extend(["last_seen_at = ?", "seen_count = ?"])
+            params.extend([now.isoformat(), seen_count])
+            params.append(item_id)
             conn.execute(
-                """
+                f"""
                 UPDATE user_knowledge
-                SET due_at = ?, last_grade = ?, last_seen_at = ?, seen_count = ?
+                SET {", ".join(updates)}
                 WHERE item_id = ?
                 """,
-                (due_at, grade, now.isoformat(), seen_count, item_id),
+                params,
             )
         else:
             conn.execute(
                 """
                 INSERT INTO user_knowledge
-                (item_id, item_type, modality, first_seen_at, last_seen_at, seen_count, due_at, last_grade)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                (
+                  item_id,
+                  item_type,
+                  modality,
+                  first_seen_at,
+                  last_seen_at,
+                  seen_count,
+                  due_at,
+                  last_grade,
+                  recall_due_at,
+                  recall_last_grade,
+                  pronunciation_due_at,
+                  pronunciation_last_grade
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
-                (item_id, item_type, "unknown", now.isoformat(), now.isoformat(), 1, due_at, grade),
+                (
+                    item_id,
+                    item_type,
+                    "unknown",
+                    now.isoformat(),
+                    now.isoformat(),
+                    1,
+                    recall_due_at,
+                    recall_grade,
+                    recall_due_at,
+                    recall_grade,
+                    pronunciation_due_at,
+                    pronunciation_grade,
+                ),
             )
         conn.commit()
     finally:
         conn.close()
 
 
-def preview_due(*, days: int, now: datetime) -> dict[str, int]:
+def preview_due(*, days: int, now: datetime, review_type: str = "recall") -> dict[str, int]:
+    due_expr = _due_expr(review_type)
     db_path = db.init_db()
     conn = sqlite3.connect(db_path)
     try:
         rows = conn.execute(
-            "SELECT due_at FROM user_knowledge WHERE due_at IS NOT NULL",
+            f"SELECT {due_expr} FROM user_knowledge WHERE {due_expr} IS NOT NULL",
         ).fetchall()
     finally:
         conn.close()

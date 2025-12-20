@@ -32,10 +32,13 @@ def test_review_flow_due_and_preview(tmp_path):
     )
 
     start = _run(env, "review", "start", "--limit", "10", "--json")
-    assert start["data"]["items"][0]["item_id"] == "w_aaaaaaaaaaaa"
+    assert start["data"]["recall_items"][0]["item_id"] == "w_aaaaaaaaaaaa"
+    assert "pronunciation_items" in start["data"]
 
     due = _run(env, "report", "due", "--limit", "10", "--max-bytes", "200000", "--json")
     assert due["data"]["items"][0]["item_id"] == "w_aaaaaaaaaaaa"
 
     preview = _run(env, "srs", "preview", "--days", "7", "--json")
     assert preview["data"]["days"] == 7
+    assert "recall" in preview["data"]["forecast"]
+    assert "pronunciation" in preview["data"]["forecast"]

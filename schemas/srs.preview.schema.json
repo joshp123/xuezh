@@ -32,7 +32,16 @@
           "type": "integer"
         },
         "forecast": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "recall": {
+              "type": "object"
+            },
+            "pronunciation": {
+              "type": "object"
+            }
+          },
+          "additionalProperties": true
         }
       },
       "additionalProperties": true

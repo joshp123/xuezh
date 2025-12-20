@@ -263,7 +263,14 @@ def build_mastery_report(
     try:
         rows = conn.execute(
             """
-            SELECT item_id, last_seen_at, seen_count, due_at, last_grade
+            SELECT
+              item_id,
+              last_seen_at,
+              seen_count,
+              COALESCE(recall_due_at, due_at),
+              COALESCE(recall_last_grade, last_grade),
+              pronunciation_due_at,
+              pronunciation_last_grade
             FROM user_knowledge
             WHERE item_type = ? AND last_seen_at IS NOT NULL AND last_seen_at >= ?
             ORDER BY last_seen_at DESC, item_id ASC
@@ -278,8 +285,10 @@ def build_mastery_report(
             "item_id": row[0],
             "last_seen": row[1],
             "times_seen": row[2],
-            "due_at": row[3],
-            "last_grade": row[4],
+            "recall_due_at": row[3],
+            "recall_last_grade": row[4],
+            "pronunciation_due_at": row[5],
+            "pronunciation_last_grade": row[6],
         }
         for row in rows[:max_items]
     ]

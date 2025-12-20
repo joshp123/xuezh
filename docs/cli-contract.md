@@ -48,9 +48,11 @@ All commands return one of:
 - `xuezh review start --limit 10 --json`
 - command id: `review.start`
 - output schema: `schemas/review.start.schema.json`
+- output includes separate `recall_items` and `pronunciation_items` (with `items` as recall alias)
 
 ### review grade
-- `xuezh review grade --item <ITEM_ID> --grade 0..5 [--next-due <ISO>] [--rule sm2|leitner] --json`
+- `xuezh review grade --item <ITEM_ID> --recall 0..5 [--pronunciation 0..5] [--next-due <ISO>] [--rule sm2|leitner] --json`
+- `--grade` remains as a recall-only alias for backward compatibility
 - command id: `review.grade`
 - output schema: `schemas/review.grade.schema.json`
 
@@ -61,6 +63,7 @@ All commands return one of:
 ### srs preview
 - `xuezh srs preview --days 14 --json`
 - command id: `srs.preview`
+- output includes separate `forecast.recall` and `forecast.pronunciation`
 
 ### report hsk
 - `xuezh report hsk --level 1..6 --window 30d --max-items 200 --max-bytes 200000 --json`

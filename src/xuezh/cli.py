@@ -270,11 +270,23 @@ def review_start(
     json_output: bool = typer.Option(True, "--json"),
 ):
     now = clock.now_utc()
-    items = srs.list_due_items(limit=limit, now=now)
+    recall_items = srs.list_due_items(limit=limit, now=now, review_type="recall")
+    pronunciation_items = srs.list_due_items(limit=limit, now=now, review_type="pronunciation")
     out = envelope.ok(
         command="review.start",
         data={
-            "items": [{"item_id": item.item_id, "due_at": item.due_at} for item in items],
+            "items": [
+                {"item_id": item.item_id, "due_at": item.due_at, "review_type": item.review_type}
+                for item in recall_items
+            ],
+            "recall_items": [
+                {"item_id": item.item_id, "due_at": item.due_at, "review_type": item.review_type}
+                for item in recall_items
+            ],
+            "pronunciation_items": [
+                {"item_id": item.item_id, "due_at": item.due_at, "review_type": item.review_type}
+                for item in pronunciation_items
+            ],
             "generated_at": now.isoformat(),
         },
         limits={"limit": limit},
@@ -285,24 +297,91 @@ def review_start(
 @review_app.command("grade")
 def review_grade(
     item: str = typer.Option(..., "--item", help="Item ID (see specs/id-scheme.md)"),
-    grade: int = typer.Option(..., "--grade", min=0, max=5),
+    grade: int | None = typer.Option(None, "--grade", min=0, max=5),
+    recall: int | None = typer.Option(None, "--recall", min=0, max=5),
+    pronunciation: int | None = typer.Option(None, "--pronunciation", min=0, max=5),
     next_due: str | None = typer.Option(None, "--next-due"),
     rule: str | None = typer.Option(None, "--rule", help="sm2|leitner"),
     json_output: bool = typer.Option(True, "--json"),
 ):
     now = clock.now_utc()
-    due_at, applied_rule = srs.schedule_next_due(grade=grade, now=now, rule=rule, next_due=next_due)
-    srs.upsert_knowledge(item_id=item, due_at=due_at, grade=grade, now=now)
-    srs.record_review_event(
+    if grade is not None and (recall is not None or pronunciation is not None):
+        raise ValueError("Use --grade alone or --recall/--pronunciation, not both")
+    if grade is None and recall is None and pronunciation is None:
+        raise ValueError("Provide --grade or --recall/--pronunciation")
+
+    if grade is not None:
+        recall = grade
+
+    recall_due_at = None
+    recall_rule = None
+    if recall is not None:
+        recall_due_at, recall_rule = srs.schedule_next_due(
+            grade=recall,
+            now=now,
+            rule=rule,
+            next_due=next_due,
+        )
+    pronunciation_due_at = None
+    pronunciation_rule = None
+    if pronunciation is not None:
+        pronunciation_next_due = next_due if recall is None else None
+        pronunciation_due_at, pronunciation_rule = srs.schedule_next_due(
+            grade=pronunciation,
+            now=now,
+            rule=rule,
+            next_due=pronunciation_next_due,
+        )
+
+    srs.upsert_knowledge(
         item_id=item,
-        event_type="review.grade",
-        payload={"grade": grade, "rule": applied_rule, "next_due": due_at},
+        recall_due_at=recall_due_at,
+        recall_grade=recall,
+        pronunciation_due_at=pronunciation_due_at,
+        pronunciation_grade=pronunciation,
         now=now,
     )
-    out = envelope.ok(
-        command="review.grade",
-        data={"item": item, "grade": grade, "next_due": due_at, "rule_applied": applied_rule},
-    )
+    if recall is not None:
+        srs.record_review_event(
+            item_id=item,
+            event_type="review.grade",
+            payload={"review_type": "recall", "grade": recall, "rule": recall_rule, "next_due": recall_due_at},
+            now=now,
+        )
+    if pronunciation is not None:
+        srs.record_review_event(
+            item_id=item,
+            event_type="review.grade",
+            payload={
+                "review_type": "pronunciation",
+                "grade": pronunciation,
+                "rule": pronunciation_rule,
+                "next_due": pronunciation_due_at,
+            },
+            now=now,
+        )
+
+    data: dict[str, object] = {"item": item}
+    if recall is not None:
+        data.update(
+            {
+                "recall_grade": recall,
+                "recall_next_due": recall_due_at,
+                "recall_rule_applied": recall_rule,
+            }
+        )
+    if pronunciation is not None:
+        data.update(
+            {
+                "pronunciation_grade": pronunciation,
+                "pronunciation_next_due": pronunciation_due_at,
+                "pronunciation_rule_applied": pronunciation_rule,
+            }
+        )
+    if grade is not None:
+        data.update({"grade": grade, "next_due": recall_due_at, "rule_applied": recall_rule})
+
+    out = envelope.ok(command="review.grade", data=data)
     _emit(out)
 
 
@@ -314,7 +393,7 @@ def review_bury(
 ):
     now = clock.now_utc()
     due_at, _ = srs.schedule_next_due(grade=0, now=now, rule="leitner", next_due=None)
-    srs.upsert_knowledge(item_id=item, due_at=due_at, grade=None, now=now)
+    srs.upsert_knowledge(item_id=item, recall_due_at=due_at, recall_grade=None, now=now)
     srs.record_review_event(
         item_id=item,
         event_type="review.bury",
@@ -332,7 +411,10 @@ def srs_preview(
     json_output: bool = typer.Option(True, "--json"),
 ):
     now = clock.now_utc()
-    forecast = srs.preview_due(days=days, now=now)
+    forecast = {
+        "recall": srs.preview_due(days=days, now=now, review_type="recall"),
+        "pronunciation": srs.preview_due(days=days, now=now, review_type="pronunciation"),
+    }
     out = envelope.ok(command="srs.preview", data={"days": days, "forecast": forecast})
     _emit(out)
 
@@ -395,7 +477,7 @@ def report_due(
     json_output: bool = typer.Option(True, "--json"),
 ):
     now = clock.now_utc()
-    items = srs.list_due_items(limit=limit, now=now)
+    items = srs.list_due_items(limit=limit, now=now, review_type="recall")
     out = envelope.ok(
         command="report.due",
         data={"items": [{"item_id": item.item_id, "due_at": item.due_at} for item in items]},
