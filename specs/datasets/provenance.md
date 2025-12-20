@@ -2,10 +2,9 @@
 
 **Goal:** make HSK/frequency data reproducible and legally unambiguous.
 
-This repo does **not** bundle full HSK datasets by default.
-It provides:
-- import formats (`specs/datasets-format.md`)
-- tiny test fixtures under `tests/fixtures/datasets/` (minimal samples)
+This repo bundles a pinned snapshot of **ivankra/hsk30** under `datasets/ivankra-hsk30/`
+for default initialization. Tests still use tiny fixtures under `tests/fixtures/datasets/`
+to keep the suite fast and deterministic.
 
 For real datasets, choose an open-licensed source and record its version/commit hash.
 
@@ -15,6 +14,7 @@ For real datasets, choose an open-licensed source and record its version/commit 
    - Repo: https://github.com/ivankra/hsk30
    - License: MIT (repo)
    - Includes: hsk30.csv (vocab), hsk30-grammar.csv (grammar), hsk30-chars.csv (chars)
+   - Pinned snapshot: see `datasets/ivankra-hsk30/SOURCE.txt` for commit hash
    - Default policy: use most recently ingested dataset per type (no extra CLI flags)
    - Pin exact commit hash at import time for provenance
 

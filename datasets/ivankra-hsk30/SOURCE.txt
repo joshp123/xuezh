@@ -1,0 +1,3 @@
+Source repo: https://github.com/ivankra/hsk30
+Commit: 4ff9e3915ce87baaecd7ebe263085573a4ea3192
+Notes: Snapshot of upstream CSVs (hsk30.csv, hsk30-grammar.csv, hsk30-chars.csv, hsk30-expanded.csv).

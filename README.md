@@ -159,10 +159,30 @@ Azure notes:
    pytest
    ```
 
+## Default dataset seed (HSK)
+
+The repo bundles a pinned snapshot of **ivankra/hsk30** under `datasets/ivankra-hsk30/`.
+Use it to initialize real HSK coverage (vocab + grammar only; levels 1–6).
+
+```bash
+python scripts/seed_hsk30.py --source datasets/ivankra-hsk30
+```
+
+Verify the DB has coverage:
+```bash
+xuezh report hsk --level 6 --json
+```
+
+Notes:
+- Characters are **not** imported by default (v1 scope). Add `--include-chars` if needed.
+- Levels `7–9` are excluded by design.
+- Set `XUEZH_WORKSPACE_DIR=~/.clawdis/workspace/xuezh` in Clawdis so the bot and CLI share the same DB.
+
 ## What’s included
 
 - `schemas/` : JSON Schemas (contract stubs; to be enforced by tickets)
 - `tests/fixtures/` : minimal dataset fixtures
+- `datasets/` : pinned upstream HSK snapshot for local seeding
 - `src/xuezh/` : Python package + CLI skeleton (`xuezh`)
 - `tickets/` : implementation tickets (Beads source of truth)
 - `specs/` : user requirements, BDD scenarios, and testing pyramid strategy
