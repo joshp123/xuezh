@@ -55,22 +55,22 @@
     "evidence": [
       {
         "item_id": "w_d93362e54c21",
-        "level": 1,
+        "level": "1",
         "status": "unknown"
       },
       {
         "item_id": "w_77fdc7f0c56e",
-        "level": 2,
+        "level": "2",
         "status": "unknown"
       },
       {
         "item_id": "w_0a5bab8c45c9",
-        "level": 3,
+        "level": "3",
         "status": "unknown"
       },
       {
         "item_id": "w_4c8a7694eb1d",
-        "level": 3,
+        "level": "3",
         "status": "unknown"
       }
     ],

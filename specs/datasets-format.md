@@ -13,7 +13,7 @@ This file specifies **the on-disk interchange format** the CLI will accept.
 
 ## 1) HSK vocabulary (`--type hsk_vocab`)
 CSV columns (required):
-- `hsk_level` (int 1..6)
+- `hsk_level` (string or int: `1`–`6` or `7-9`)
 - `hanzi` (string)
 - `pinyin` (string, tone marks preferred)
 - `meanings` (string; multiple meanings separated by `|`)
@@ -24,7 +24,7 @@ Optional:
 
 ## 2) HSK characters (`--type hsk_chars`) (optional for v1)
 CSV columns (required):
-- `hsk_level` (int 1..6)
+- `hsk_level` (string or int: `1`–`6` or `7-9`)
 - `character` (single Han character)
 - `pinyin` (string; if multiple, separate with `|`)
 - `meanings` (string; separate with `|`)
@@ -35,7 +35,7 @@ Optional:
 
 ## 3) HSK grammar points (`--type hsk_grammar`)
 CSV columns (required):
-- `hsk_level` (int 1..6)
+- `hsk_level` (string or int: `1`–`6` or `7-9`)
 - `grammar_id` (string; stable ID like `HSK3-G012`)
 - `title` (string)
 - `pattern` (string; e.g., `因为…所以…`)

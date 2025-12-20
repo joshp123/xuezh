@@ -58,9 +58,31 @@ def _known_items(conn: sqlite3.Connection, item_type: str | None) -> set[str]:
     return {row[0] for row in rows}
 
 
-def _counts_by_level_stats(items: list[tuple[str, int]], known_ids: set[str]) -> dict[str, dict]:
+def _level_range(level: str) -> tuple[int, int] | None:
+    value = str(level).strip()
+    value = value.replace("–", "-")
+    if value == "7-9":
+        return (7, 9)
+    if value.isdigit():
+        num = int(value)
+        return (num, num)
+    if "-" in value:
+        parts = value.split("-")
+        if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+            return (int(parts[0]), int(parts[1]))
+    return None
+
+
+def _level_sort_key(level: str) -> tuple[int, int, str]:
+    rng = _level_range(level)
+    if rng is None:
+        return (999, 999, level)
+    return (rng[0], rng[1], level)
+
+
+def _counts_by_level_stats(items: list[tuple[str, str]], known_ids: set[str]) -> dict[str, dict]:
     by_level: dict[str, dict] = {}
-    levels = sorted({level for _, level in items})
+    levels = sorted({level for _, level in items}, key=_level_sort_key)
     for level in levels:
         level_key = str(level)
         total = sum(1 for _, item_level in items if item_level == level)
@@ -77,13 +99,13 @@ def _counts_by_level_stats(items: list[tuple[str, int]], known_ids: set[str]) ->
 
 
 def _evidence_rows(
-    items: list[tuple[str, int]],
+    items: list[tuple[str, str]],
     known_ids: set[str],
     *,
     max_items: int,
 ) -> list[dict]:
     rows: list[dict] = []
-    for item_id, level in sorted(items, key=lambda it: (it[1], it[0])):
+    for item_id, level in sorted(items, key=lambda it: (_level_sort_key(it[1]), it[0])):
         status = "known" if item_id in known_ids else "unknown"
         if status == "unknown":
             rows.append({"item_id": item_id, "level": level, "status": status})
@@ -134,9 +156,9 @@ def build_hsk_report(
         grammar_id = _latest_dataset_id(conn, "hsk_grammar")
         chars_id = _latest_dataset_id(conn, "hsk_chars") if include_chars else None
 
-        vocab_items: list[tuple[str, int]] = []
-        grammar_items: list[tuple[str, int]] = []
-        chars_items: list[tuple[str, int]] = []
+        vocab_items: list[tuple[str, str]] = []
+        grammar_items: list[tuple[str, str]] = []
+        chars_items: list[tuple[str, str]] = []
 
         if vocab_id:
             for item_id, payload_json in conn.execute(
@@ -144,21 +166,24 @@ def build_hsk_report(
                 (vocab_id,),
             ):
                 payload = json.loads(payload_json)
-                vocab_items.append((item_id, int(payload.get("hsk_level"))))
+                item_level = str(payload.get("hsk_level")).strip()
+                vocab_items.append((item_id, item_level))
         if grammar_id:
             for item_id, payload_json in conn.execute(
                 "SELECT item_id, payload_json FROM dataset_items WHERE dataset_id = ?",
                 (grammar_id,),
             ):
                 payload = json.loads(payload_json)
-                grammar_items.append((item_id, int(payload.get("hsk_level"))))
+                item_level = str(payload.get("hsk_level")).strip()
+                grammar_items.append((item_id, item_level))
         if chars_id:
             for item_id, payload_json in conn.execute(
                 "SELECT item_id, payload_json FROM dataset_items WHERE dataset_id = ?",
                 (chars_id,),
             ):
                 payload = json.loads(payload_json)
-                chars_items.append((item_id, int(payload.get("hsk_level"))))
+                item_level = str(payload.get("hsk_level")).strip()
+                chars_items.append((item_id, item_level))
 
         known_vocab = _known_items(conn, "word")
         known_grammar = _known_items(conn, "grammar")
@@ -168,11 +193,34 @@ def build_hsk_report(
         grammar_levels = _counts_by_level_stats(grammar_items, known_grammar)
         chars_levels = _counts_by_level_stats(chars_items, known_chars)
 
-        def filter_levels(items: list[tuple[str, int]]) -> list[tuple[str, int]]:
-            if "-" in level:
-                min_level = int(level.split("-")[0])
-                return [it for it in items if it[1] >= min_level]
-            return [it for it in items if it[1] <= int(level)]
+        def filter_levels(items: list[tuple[str, str]]) -> list[tuple[str, str]]:
+            level_value = str(level).strip()
+            if level_value == "7-9":
+                return [it for it in items if it[1] == "7-9"]
+            if "-" in level_value:
+                parts = level_value.split("-")
+                if len(parts) == 2 and parts[0].isdigit() and parts[1].isdigit():
+                    min_level = int(parts[0])
+                    max_level = int(parts[1])
+                    filtered: list[tuple[str, str]] = []
+                    for item_id, item_level in items:
+                        rng = _level_range(item_level)
+                        if rng is None:
+                            continue
+                        if rng[0] >= min_level and rng[1] <= max_level:
+                            filtered.append((item_id, item_level))
+                    return filtered
+            if level_value.isdigit():
+                max_level = int(level_value)
+                filtered = []
+                for item_id, item_level in items:
+                    rng = _level_range(item_level)
+                    if rng is None:
+                        continue
+                    if rng[0] <= max_level:
+                        filtered.append((item_id, item_level))
+                return filtered
+            return items
 
         vocab_items = filter_levels(vocab_items)
         grammar_items = filter_levels(grammar_items)

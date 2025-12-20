@@ -22,5 +22,6 @@ Before implementing `report.hsk`, the agent must:
 ## Approved decisions (2025-12-18)
 ## Approved decisions (2025-12-19)
 - HSK audit is **vocab + grammar only** (no chars in v1).
-- Only **levels 1–6** are imported; upstream `7-9` rows are **excluded** for now.
+- Default seed imports **levels 1–6**; upstream `7-9` rows are excluded unless explicitly imported.
+- `report.hsk --level 7-9` targets the bucket when present.
 - Coverage and counts include **known/unknown** splits per level.

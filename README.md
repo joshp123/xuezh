@@ -50,6 +50,7 @@ Key interaction flows (bot ↔ user):
    xuezh report hsk --level 6 --json
    ```
    Bot summarizes the factual progress data.
+   Use `--level 7-9` if your dataset includes the 7–9 bucket.
 
 Example screenshots (from a bot flow):
 
@@ -184,7 +185,7 @@ xuezh report hsk --level 6 --json
 
 Notes:
 - Characters are **not** imported by default (v1 scope). Add `--include-chars` if needed.
-- Levels `7–9` are excluded by design.
+- The seed script filters to levels 1–6. If your dataset includes a `7–9` bucket, import those rows separately; reporting supports `--level 7-9`.
 - Set `XUEZH_WORKSPACE_DIR=~/.clawdis/workspace/xuezh` in Clawdis so the bot and CLI share the same DB.
 
 ## What’s included

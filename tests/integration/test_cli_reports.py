@@ -42,6 +42,52 @@ def test_report_hsk_with_fixtures(tmp_path):
     assert out["data"]["coverage"]["grammar"]["total"] == 2
 
 
+def test_report_hsk_supports_7_9_bucket(tmp_path):
+    repo_root = Path(__file__).resolve().parents[2]
+    env = os.environ.copy()
+    env["XUEZH_WORKSPACE_DIR"] = str(tmp_path)
+    env["XUEZH_TEST_NOW_ISO"] = "2025-01-02T03:04:05+00:00"
+
+    _run(env, "db", "init", "--json")
+
+    vocab = repo_root / "tests" / "fixtures" / "datasets" / "hsk_vocab_7_9.csv"
+    _run(env, "dataset", "import", "--type", "hsk_vocab", "--path", str(vocab), "--json")
+
+    out = _run(
+        env,
+        "report",
+        "hsk",
+        "--level",
+        "6",
+        "--window",
+        "30d",
+        "--max-items",
+        "200",
+        "--max-bytes",
+        "200000",
+        "--json",
+    )
+    assert out["data"]["coverage"]["vocab"]["total"] == 1
+    assert out["data"]["counts_by_level"]["vocab"]["7-9"]["total"] == 1
+
+    out_full = _run(
+        env,
+        "report",
+        "hsk",
+        "--level",
+        "9",
+        "--window",
+        "30d",
+        "--max-items",
+        "200",
+        "--max-bytes",
+        "200000",
+        "--json",
+    )
+    assert out_full["data"]["coverage"]["vocab"]["total"] == 2
+    assert out_full["data"]["counts_by_level"]["vocab"]["7-9"]["total"] == 1
+
+
 def test_report_mastery_with_review(tmp_path):
     env = os.environ.copy()
     env["XUEZH_WORKSPACE_DIR"] = str(tmp_path)

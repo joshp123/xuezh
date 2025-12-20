@@ -66,10 +66,11 @@ All commands return one of:
 - output includes separate `forecast.recall` and `forecast.pronunciation`
 
 ### report hsk
-- `xuezh report hsk --level 1..6 --window 30d --max-items 200 --max-bytes 200000 --json`
+- `xuezh report hsk --level 1..6|7-9 --window 30d --max-items 200 --max-bytes 200000 --json`
 - command id: `report.hsk`
 - output schema: `schemas/report.hsk.schema.json`
 - coverage includes `known/unknown` splits per level (vocab + grammar only)
+- `--level 7-9` selects the upstream bucket; numeric levels include the bucket when `--level >= 7`
 
 ### report mastery
 - `xuezh report mastery --item-type word|character|grammar --window 90d --max-items 200 --max-bytes 200000 --json`

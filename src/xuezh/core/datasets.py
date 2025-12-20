@@ -28,6 +28,16 @@ def _read_csv(path: Path) -> list[dict[str, str]]:
         return [row for row in reader if any((v or "").strip() for v in row.values())]
 
 
+def _parse_hsk_level(value: str) -> str:
+    text = str(value).strip()
+    text = text.replace("–", "-")
+    if text == "7-9":
+        return text
+    if text.isdigit():
+        return text
+    raise ValueError(f"Unsupported hsk_level: {value}")
+
+
 def _insert_dataset(conn: sqlite3.Connection, *, dataset_id: str, dataset_type: str, version: str, source: str) -> None:
     conn.execute(
         """
@@ -71,7 +81,7 @@ def import_dataset(dataset_type: str, path: str) -> tuple[str, int]:
 
         for idx, row in enumerate(rows, start=1):
             if dataset_type == "hsk_vocab":
-                level = int(row["hsk_level"])
+                level = _parse_hsk_level(row["hsk_level"])
                 hanzi = row["hanzi"]
                 pinyin = row["pinyin"]
                 meanings = row["meanings"]
@@ -94,7 +104,7 @@ def import_dataset(dataset_type: str, path: str) -> tuple[str, int]:
                 _insert_dataset_item(conn, dataset_id=dataset_id, item_id=item_id, item_type="word", payload=payload)
 
             elif dataset_type == "hsk_chars":
-                level = int(row["hsk_level"])
+                level = _parse_hsk_level(row["hsk_level"])
                 character = row["character"]
                 pinyin = row["pinyin"]
                 meanings = row["meanings"]
@@ -119,7 +129,7 @@ def import_dataset(dataset_type: str, path: str) -> tuple[str, int]:
                 _insert_dataset_item(conn, dataset_id=dataset_id, item_id=item_id, item_type="character", payload=payload)
 
             elif dataset_type == "hsk_grammar":
-                level = int(row["hsk_level"])
+                level = _parse_hsk_level(row["hsk_level"])
                 grammar_key = row["grammar_id"]
                 title = row["title"]
                 pattern = row["pattern"]
