@@ -354,18 +354,18 @@ Stop early unless the user explicitly asks for more.
 ### Snapshot + HSK audit
 ```
 xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json
-xuezh report hsk --level 3 --window 30d --max-items 50 --max-bytes 200000 --json
+xuezh report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --json
 ```
 
 ### Review loop
 ```
-xuezh review start --limit 5 --json
+xuezh review start --limit 10 --json
 xuezh review grade --item w_aaaaaaaaaaaa --grade 4 --next-due 2025-01-02T03:04:05+00:00 --json
 ```
 
 ### Speaking loop (Telegram voice note)
 ```
-xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out {workspace}/artifacts/tts.ogg --backend edge-tts --json
+xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out artifacts/tts.ogg --backend edge-tts --json
 xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text "你好" --json
 ```
 

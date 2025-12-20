@@ -79,10 +79,12 @@ All commands return one of:
 ### audio convert
 - `xuezh audio convert --in <path> --out <path> --format wav|ogg|mp3 --backend ffmpeg --json`
 - command id: `audio.convert`
+- `--out` must be inside the workspace (use a relative path like `artifacts/converted.wav`)
 
 ### audio tts
 - `xuezh audio tts --text "<text>" --voice "<voice>" --out <path> --backend edge-tts --json`
 - command id: `audio.tts`
+- `--out` must be inside the workspace (use a relative path like `artifacts/tts.ogg`)
 
 ### audio process-voice
 - `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --json`

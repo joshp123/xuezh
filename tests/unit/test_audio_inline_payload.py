@@ -28,6 +28,31 @@ def test_inline_payload_truncates_words(monkeypatch):
     assert "words" not in transcript_inline
 
 
+def test_inline_payload_dedupes_word_detail(monkeypatch):
+    from xuezh.core import audio
+
+    monkeypatch.setenv("XUEZH_AUDIO_INLINE_MAX_BYTES", "10000")
+    assessment = {
+        "overall": {"accuracy_score": 1.0},
+        "words": [{"word": "你好"}],
+    }
+    transcript = {
+        "text": "你好",
+        "words": [{"word": "你好"}],
+    }
+    artifacts_index = {"assessment": "artifacts/assessment.json", "transcript": "artifacts/transcript.json"}
+
+    assessment_inline, transcript_inline, truncated = audio._inline_pronunciation_payload(
+        assessment=assessment,
+        transcript=transcript,
+        artifacts_index=artifacts_index,
+    )
+
+    assert truncated is False
+    assert "words" in assessment_inline
+    assert "words" not in transcript_inline
+
+
 def test_inline_payload_minimal_spill(monkeypatch):
     from xuezh.core import audio
 

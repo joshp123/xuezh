@@ -303,6 +303,13 @@ def _payload_bytes(*, assessment: dict, transcript: dict) -> int:
     return len(jsonio.dumps(payload).encode("utf-8"))
 
 
+def _dedupe_word_detail(*, assessment: dict, transcript: dict) -> tuple[dict, dict]:
+    if "words" in assessment and "words" in transcript:
+        transcript = dict(transcript)
+        transcript.pop("words", None)
+    return assessment, transcript
+
+
 def _inline_detail_max_bytes() -> int:
     config_value = config_core.get_config_value("audio", "inline_max_bytes")
     if isinstance(config_value, int) and config_value > 0:
@@ -350,26 +357,30 @@ def _inline_pronunciation_payload(
     artifacts_index: dict,
 ) -> tuple[dict, dict, bool]:
     max_bytes = _inline_detail_max_bytes()
-    detail_bytes = _payload_bytes(assessment=assessment, transcript=transcript)
+    assessment_inline, transcript_inline = _dedupe_word_detail(
+        assessment=assessment,
+        transcript=transcript,
+    )
+    detail_bytes = _payload_bytes(assessment=assessment_inline, transcript=transcript_inline)
     if detail_bytes <= max_bytes:
-        return assessment, transcript, False
-    assessment_summary = _summarize_detail(assessment)
-    transcript_summary = _summarize_detail(transcript)
+        return assessment_inline, transcript_inline, False
+    assessment_summary = _summarize_detail(assessment_inline)
+    transcript_summary = _summarize_detail(transcript_inline)
     summary_bytes = _payload_bytes(assessment=assessment_summary, transcript=transcript_summary)
     if summary_bytes <= max_bytes:
         return assessment_summary, transcript_summary, True
     preview_len = 2000
-    text = transcript.get("text")
+    text = transcript_inline.get("text")
     if isinstance(text, str):
         preview_len = min(len(text), preview_len)
     else:
         preview_len = 0
-    assessment_min = _minimal_assessment(assessment, artifacts_index)
-    transcript_min = _minimal_transcript(transcript, artifacts_index, preview_len)
+    assessment_min = _minimal_assessment(assessment_inline, artifacts_index)
+    transcript_min = _minimal_transcript(transcript_inline, artifacts_index, preview_len)
     minimal_bytes = _payload_bytes(assessment=assessment_min, transcript=transcript_min)
     if minimal_bytes <= max_bytes:
         return assessment_min, transcript_min, True
-    transcript_min = _minimal_transcript(transcript, artifacts_index, 0)
+    transcript_min = _minimal_transcript(transcript_inline, artifacts_index, 0)
     return assessment_min, transcript_min, True
 
 
