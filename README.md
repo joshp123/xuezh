@@ -82,6 +82,7 @@ inline_max_bytes = 200000
 ## Other usage (CLI)
 This is a standard CLI. You can call it from any script or workflow as long as its dependencies are available:
 ```text
+nix run github:joshp123/xuezh
 xuezh version --json
 xuezh audio process-voice --in /path/to/voice.m4a --ref-text "你好" --json
 ```
