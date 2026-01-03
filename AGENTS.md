@@ -219,10 +219,6 @@ The contract tests will fail if any of these drift.
 Environment knobs (set via plugin `config.env`):
 - `XUEZH_AZURE_SPEECH_KEY_FILE`: path to the Azure Speech key file (e.g. `/run/agenix/xuezh-azure-speech-key`)
 - `XUEZH_AZURE_SPEECH_REGION`: Azure region (e.g. `westeurope`)
-- `XUEZH_CONFIG_DIR`: optional config directory containing `config.toml`
-- `XUEZH_CONFIG_PATH`: optional full path to `config.toml`
 
 Config resolution:
 - Default path: `~/.config/xuezh/config.toml` (or `$XDG_CONFIG_HOME/xuezh/config.toml`)
-- `XUEZH_CONFIG_DIR` takes precedence over `XDG_CONFIG_HOME`
-- `XUEZH_CONFIG_PATH` overrides all other config locations
