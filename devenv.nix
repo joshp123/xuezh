@@ -6,16 +6,12 @@
   # Policy: if you need a tool, add it here (do not use brew/global installs).
   # Python deps are installed in a project venv (pip install -e .[dev]) inside devenv.
 
-  languages.python = {
-    enable = true;
-    version = "3.11";
-    venv.enable = true;
-  };
-
   packages = with pkgs; [
     git
     gh
     jq
+    go
+    gopls
 
     # Azure provisioning + IaC
     azure-cli
@@ -24,6 +20,7 @@
     # Audio / media tools used by the engine wrappers
     ffmpeg
     yt-dlp
+    python313Packages.edge-tts
 
     # Optional: if you decide to add local pronunciation tooling later
     # praat
