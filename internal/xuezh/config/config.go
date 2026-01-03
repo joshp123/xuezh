@@ -18,6 +18,13 @@ func configPath() (string, error) {
 	if override := os.Getenv("XUEZH_CONFIG_PATH"); override != "" {
 		return expandHome(override)
 	}
+	if override := os.Getenv("XUEZH_CONFIG_DIR"); override != "" {
+		base, err := expandHome(override)
+		if err != nil {
+			return "", err
+		}
+		return filepath.Join(base, "config.toml"), nil
+	}
 	base := os.Getenv("XDG_CONFIG_HOME")
 	if base == "" {
 		home, err := os.UserHomeDir()

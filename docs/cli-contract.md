@@ -94,7 +94,8 @@ All commands return one of:
 - `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --json`
 - command id: `audio.process-voice`
 - output schema: `schemas/audio.process-voice.schema.json`
-- default pronunciation backend: `azure.speech` (requires `AZURE_SPEECH_KEY` + `AZURE_SPEECH_REGION`)
+- default pronunciation backend: `azure.speech` (requires `XUEZH_AZURE_SPEECH_KEY_FILE` + `XUEZH_AZURE_SPEECH_REGION`)
+  - `AZURE_SPEECH_KEY` / `AZURE_SPEECH_REGION` are accepted for compatibility
 - output includes inline `assessment` + `transcript` for actionable feedback; full detail remains in artifacts
 - if inline word/phoneme detail is too large, only summary is returned inline and `truncated=true` with full detail in artifacts
 
@@ -105,6 +106,8 @@ All commands return one of:
   - `XUEZH_AUDIO_CONVERT_BACKEND=<backend_id>`
   - `XUEZH_AUDIO_TTS_BACKEND=<backend_id>`
 - Config file: `~/.config/xuezh/config.toml` (or `$XDG_CONFIG_HOME/xuezh/config.toml`)
+  - Override with `XUEZH_CONFIG_DIR` (directory containing `config.toml`)
+  - Override with `XUEZH_CONFIG_PATH` (full file path)
   - `[audio] backend_global`, `process_voice_backend`, `convert_backend`, `tts_backend`
 - CLI flags still apply for `audio convert` / `audio tts` (`--backend`).
 - Precedence: CLI flag > config file > env vars > default.
