@@ -27,7 +27,7 @@ Design and implement a complete, production-ready language learning system for C
 ### Current Technical Environment
 - **Primary Interface**: Telegram bot (@jospalmbot)
 - **AI Backend**: Claude Opus 4.0 via Pi-coding-agent
-- **Gateway**: Clawdis (custom Telegram/WhatsApp gateway)
+- **Gateway**: Clawdbot (custom Telegram/WhatsApp gateway)
 - **Operating System**: macOS on M4 MacBook Pro
 - **Available Tools**:
   - edge-tts: Microsoft's neural TTS with Chinese voices (XiaoxiaoNeural, YunxiNeural, YunyangNeural)
@@ -267,7 +267,7 @@ Comprehensive Chinese learning system with natural acquisition focus.
 6. Repeat until satisfactory
 
 ## Data Management
-- Store all data in `~/.clawdis/workspace/chinese-learning/`
+- Store all data in `~/.clawdbot/workspace/chinese-learning/`
 - Daily backups to `chinese-learning-backup/`
 - Export progress reports weekly
 ```

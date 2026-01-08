@@ -2,22 +2,22 @@
 
 Name: **xuezh** is short for **学中文** (learn Chinese).
 
-This repo is a **local learning engine** for Mandarin study. It is designed to be used as a **tool/skill** behind a bot runtime + SOTA LLM (Clawdis is the recommended integration), but it is also a plain **CLI** you can call however you want.
+This repo is a **local learning engine** for Mandarin study. It is designed to be used as a **tool/skill** behind a bot runtime + SOTA LLM (Clawdbot is the recommended integration), but it is also a plain **CLI** you can call however you want.
 
 ## Authorship
 
 Primary author: **Codex** using the **gpt-5.2-codex** model.
 
-## Recommended usage (Clawdis)
-**Recommended**: run `xuezh` as a CLI tool from a bot agent (Clawdis) and parse JSON outputs.  
+## Recommended usage (Clawdbot)
+**Recommended**: run `xuezh` as a CLI tool from a bot agent (Clawdbot) and parse JSON outputs.  
 Use a config file for credentials/behavior, and keep dependencies pinned in the bot's dev environment.  
 You will need an Azure Speech key + region (free tier is fine to start).
 
-Clawdis (upstream) repo:
+Clawdbot (upstream) repo:
 ```
-https://github.com/steipete/clawdis
+https://github.com/steipete/clawdbot
 ```
-Clawdis is a local-first personal assistant that routes WhatsApp/Telegram/WebChat messages to an agent runtime.
+Clawdbot is a local-first personal assistant that routes WhatsApp/Telegram/WebChat messages to an agent runtime.
 The Gateway is the control plane (sessions, providers, media, voice wake), while tools like `xuezh` are called on demand.
 Integration is simple: have the bot call the `xuezh` CLI and parse JSON responses, then surface the feedback back to the user.
 You can run the bot locally on your devices and keep all state under your control.
@@ -187,7 +187,7 @@ xuezh report hsk --level 6 --json
 Notes:
 - Characters are **not** imported by default (v1 scope). Add `--include-chars` if needed.
 - The seed script filters to levels 1–6. If your dataset includes a `7–9` bucket, import those rows separately; reporting supports `--level 7-9`.
-- Set `XUEZH_WORKSPACE_DIR=~/.clawdis/workspace/xuezh` in Clawdis so the bot and CLI share the same DB.
+- Set `XUEZH_WORKSPACE_DIR=~/.clawdbot/workspace/xuezh` in Clawdbot so the bot and CLI share the same DB.
 
 ## What’s included
 
@@ -204,7 +204,7 @@ Notes:
 
 ## Project boundaries (important)
 
-- This repo **does not** implement the Clawdis bot runtime/Gateway or any Telegram/WhatsApp/WebChat integration.
+- This repo **does not** implement the Clawdbot bot runtime/Gateway or any Telegram/WhatsApp/WebChat integration.
 - This repo **does not** implement pedagogy, recommendations, or personalization logic (that stays in the model/agent).
 - The skill (`skills/.../SKILL.md`) teaches the model *how to use the engine*, and encodes learning best practices.
 
@@ -212,7 +212,7 @@ Notes:
 
 The engine stores data under:
 
-- `~/.clawdis/workspace/xuezh/`
+- `~/.clawdbot/workspace/xuezh/`
 
 Override via environment variables:
 - `XUEZH_WORKSPACE_DIR`

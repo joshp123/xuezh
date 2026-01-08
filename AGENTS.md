@@ -214,7 +214,7 @@ The contract tests will fail if any of these drift.
 - NEVER say "ready to push when you are" - YOU must push
 - If push fails, resolve and retry until it succeeds
 
-## Plugin configuration (nix-clawdis)
+## Plugin configuration (nix-clawdbot)
 
 Environment knobs (set via plugin `config.env`):
 - `XUEZH_AZURE_SPEECH_KEY_FILE`: path to the Azure Speech key file (e.g. `/run/agenix/xuezh-azure-speech-key`)

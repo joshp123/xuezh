@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const defaultWorkspace = ".clawdis/workspace/xuezh"
+const defaultWorkspace = ".clawdbot/workspace/xuezh"
 
 var workspaceSubdirs = []string{"artifacts", "cache", "exports", "backups"}
 
