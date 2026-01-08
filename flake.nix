@@ -52,7 +52,7 @@
       );
     in
     perSystem // {
-      clawdisPlugin = let system = builtins.currentSystem; in {
+      clawdbotPlugin = let system = builtins.currentSystem; in {
         name = "xuezh";
         skills = [ ./skills/xuezh ];
         packages = [ self.packages.${system}.default ];

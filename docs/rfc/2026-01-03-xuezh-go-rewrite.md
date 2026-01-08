@@ -70,7 +70,7 @@ proven by tests and a parity harness comparing outputs.
 
 Minimum inputs:
 - CLI arguments and flags per contract.
-- Workspace path (defaults to `~/.clawdis/workspace/xuezh/`).
+- Workspace path (defaults to `~/.clawdbot/workspace/xuezh/`).
 - Optional environment variables for audio backend selection and secrets.
 
 Validation rules:
