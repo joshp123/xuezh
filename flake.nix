@@ -52,17 +52,20 @@
       );
     in
     perSystem // {
-      openclawPlugin = system: {
-        name = "xuezh";
-        skills = [ ./skills/xuezh ];
-        packages = [ self.packages.${system}.default ];
-        needs = {
-          stateDirs = [ ".config/xuezh" ];
-          requiredEnv = [
-            "XUEZH_AZURE_SPEECH_KEY_FILE"
-            "XUEZH_AZURE_SPEECH_REGION"
-          ];
+      openclawPlugin = system:
+        let
+          pkgs = import nixpkgs { inherit system; };
+        in {
+          name = "xuezh";
+          skills = [ ./skills/xuezh ];
+          packages = [ self.packages.${system}.default pkgs.edge-tts ];
+          needs = {
+            stateDirs = [ ".config/xuezh" ];
+            requiredEnv = [
+              "XUEZH_AZURE_SPEECH_KEY_FILE"
+              "XUEZH_AZURE_SPEECH_REGION"
+            ];
+          };
         };
-      };
     };
 }
