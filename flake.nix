@@ -52,7 +52,7 @@
       );
     in
     perSystem // {
-      openclawPlugin = let system = builtins.currentSystem; in {
+      openclawPlugin = system: {
         name = "xuezh";
         skills = [ ./skills/xuezh ];
         packages = [ self.packages.${system}.default ];
