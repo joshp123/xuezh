@@ -55,10 +55,11 @@
       openclawPlugin = system:
         let
           pkgs = import nixpkgs { inherit system; };
+          edgeTts = if pkgs ? edge-tts then pkgs.edge-tts else pkgs.python3Packages.edge-tts;
         in {
           name = "xuezh";
           skills = [ ./skills/xuezh ];
-          packages = [ self.packages.${system}.default pkgs.edge-tts ];
+          packages = [ self.packages.${system}.default edgeTts ];
           needs = {
             stateDirs = [ ".config/xuezh" ];
             requiredEnv = [
