@@ -44,6 +44,38 @@ All commands return one of:
 - dataset format: see `specs/datasets-format.md`
 - provenance/licensing: see `specs/datasets/provenance.md`
 
+### hellochinese import
+- `xuezh hellochinese import --path <hellochinese_words.jsonl> [--audio none|sentence] [--voices <comma_list>] --json`
+- command id: `hellochinese.import`
+- output schema: `schemas/hellochinese.import.schema.json`
+- imports one review item per row, using `index` as learning order when present
+- source `sentence_hanzi` is cleaned before storage/audio/card display; raw spaced text is retained only as provenance
+- `--audio sentence` uses the existing `audio tts` backend and should only be used after a one-sentence smoke test succeeds in `devenv`
+
+### hellochinese audio-backfill
+- `xuezh hellochinese audio-backfill [--limit N] [--concurrency N] [--voices <comma_list>] --json`
+- command id: `hellochinese.audio-backfill`
+- output schema: `schemas/hellochinese.audio-backfill.schema.json`
+- generates missing sentence audio for already-imported HelloChinese items
+- audio generation may run concurrently; SQLite updates are serialized so per-voice paths are not lost
+
+### cram next
+- `xuezh cram next --limit 1 --json`
+- command id: `cram.next`
+- output schema: `schemas/cram.next.schema.json`
+- returns due cram cards first, then new cards in learning order
+- card front is the Chinese sentence with the target word available for highlighting by clients
+
+### cram grade
+- `xuezh cram grade --item <ITEM_ID> --grade again|hard|good|easy --json`
+- command id: `cram.grade`
+- output schema: `schemas/cram.grade.schema.json`
+- scheduling is mechanical:
+  - `again`: now
+  - `hard`: now + 10 minutes
+  - `good`: now + 2 hours
+  - `easy`: now + 24 hours
+
 ### review start
 - `xuezh review start --limit 10 --json`
 - command id: `review.start`

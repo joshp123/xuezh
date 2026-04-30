@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hellochinese.import ok envelope",
+  "type": "object",
+  "required": ["ok", "schema_version", "command", "data", "artifacts", "truncated", "limits"],
+  "properties": {
+    "ok": { "const": true },
+    "schema_version": { "type": "string" },
+    "command": { "const": "hellochinese.import" },
+    "data": {
+      "type": "object",
+      "required": ["rows_seen", "rows_inserted", "rows_existing", "audio_generated", "audio_existing", "audio_failed"],
+      "properties": {
+        "rows_seen": { "type": "integer" },
+        "rows_inserted": { "type": "integer" },
+        "rows_existing": { "type": "integer" },
+        "audio_generated": { "type": "integer" },
+        "audio_existing": { "type": "integer" },
+        "audio_failed": { "type": "integer" }
+      }
+    },
+    "artifacts": { "type": "array" },
+    "truncated": { "type": "boolean" },
+    "limits": { "type": "object" }
+  },
+  "additionalProperties": true
+}

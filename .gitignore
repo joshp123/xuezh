@@ -11,6 +11,8 @@ build/
 .direnv/
 .devenv/
 .devenv*
+node_modules/
+web/dist/
 workspace/
 
 # Terraform/OpenTofu

@@ -12,6 +12,8 @@
     jq
     go
     gopls
+    nodejs_22
+    pnpm
 
     # Azure provisioning + IaC
     azure-cli

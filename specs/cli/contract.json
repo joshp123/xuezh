@@ -31,6 +31,34 @@
       "example_cli": "xuezh dataset import --type hsk_vocab --path FILE --json"
     },
     {
+      "id": "hellochinese.import",
+      "cli": "xuezh hellochinese import --path FILE --audio none --json",
+      "schema_ok": "schemas/hellochinese.import.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh hellochinese import --path internal/xuezh/hellochinese/testdata/min.jsonl --audio none --json"
+    },
+    {
+      "id": "hellochinese.audio-backfill",
+      "cli": "xuezh hellochinese audio-backfill --limit 3 --concurrency 4 --json",
+      "schema_ok": "schemas/hellochinese.audio-backfill.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh hellochinese audio-backfill --limit 3 --concurrency 4 --json"
+    },
+    {
+      "id": "cram.next",
+      "cli": "xuezh cram next --limit 1 --json",
+      "schema_ok": "schemas/cram.next.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh cram next --limit 1 --json"
+    },
+    {
+      "id": "cram.grade",
+      "cli": "xuezh cram grade --item ITEM --grade good --json",
+      "schema_ok": "schemas/cram.grade.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh cram grade --item ITEM --grade good --json"
+    },
+    {
       "id": "review.start",
       "cli": "xuezh review start --limit 10 --json",
       "schema_ok": "schemas/review.start.schema.json",

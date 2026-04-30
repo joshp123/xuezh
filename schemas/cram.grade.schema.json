@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cram.grade ok envelope",
+  "type": "object",
+  "required": ["ok", "schema_version", "command", "data", "artifacts", "truncated", "limits"],
+  "properties": {
+    "ok": { "const": true },
+    "schema_version": { "type": "string" },
+    "command": { "const": "cram.grade" },
+    "data": {
+      "type": "object",
+      "required": ["item_id", "grade", "status", "next_due_at", "seen_count", "lapse_count"],
+      "properties": {
+        "item_id": { "type": "string" },
+        "grade": { "enum": ["again", "hard", "good", "easy"] },
+        "status": { "type": "string" },
+        "next_due_at": { "type": "string" },
+        "seen_count": { "type": "integer" },
+        "lapse_count": { "type": "integer" }
+      }
+    },
+    "artifacts": { "type": "array" },
+    "truncated": { "type": "boolean" },
+    "limits": { "type": "object" }
+  },
+  "additionalProperties": true
+}

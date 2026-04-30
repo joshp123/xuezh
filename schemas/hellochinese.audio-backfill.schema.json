@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "hellochinese.audio-backfill ok envelope",
+  "type": "object",
+  "required": ["ok", "schema_version", "command", "data", "artifacts", "truncated", "limits"],
+  "properties": {
+    "ok": { "const": true },
+    "schema_version": { "type": "string" },
+    "command": { "const": "hellochinese.audio-backfill" },
+    "data": {
+      "type": "object",
+      "required": ["tasks_seen", "audio_generated", "audio_existing", "audio_failed"],
+      "properties": {
+        "tasks_seen": { "type": "integer" },
+        "audio_generated": { "type": "integer" },
+        "audio_existing": { "type": "integer" },
+        "audio_failed": { "type": "integer" }
+      }
+    },
+    "artifacts": { "type": "array" },
+    "truncated": { "type": "boolean" },
+    "limits": { "type": "object" }
+  },
+  "additionalProperties": true
+}

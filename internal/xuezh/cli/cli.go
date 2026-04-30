@@ -19,6 +19,7 @@ import (
 	"github.com/joshp123/xuezh/internal/xuezh/db"
 	"github.com/joshp123/xuezh/internal/xuezh/envelope"
 	"github.com/joshp123/xuezh/internal/xuezh/events"
+	"github.com/joshp123/xuezh/internal/xuezh/hellochinese"
 	"github.com/joshp123/xuezh/internal/xuezh/jsonio"
 	"github.com/joshp123/xuezh/internal/xuezh/paths"
 	"github.com/joshp123/xuezh/internal/xuezh/process"
@@ -26,6 +27,7 @@ import (
 	"github.com/joshp123/xuezh/internal/xuezh/retention"
 	"github.com/joshp123/xuezh/internal/xuezh/snapshot"
 	"github.com/joshp123/xuezh/internal/xuezh/srs"
+	"github.com/joshp123/xuezh/internal/xuezh/webserver"
 )
 
 const version = "0.1.0"
@@ -44,8 +46,12 @@ func Run(args []string) int {
 		return runDB(args[1:])
 	case "dataset":
 		return runDataset(args[1:])
+	case "hellochinese":
+		return runHelloChinese(args[1:])
 	case "review":
 		return runReview(args[1:])
+	case "cram":
+		return runCram(args[1:])
 	case "srs":
 		return runSRS(args[1:])
 	case "report":
@@ -56,6 +62,8 @@ func Run(args []string) int {
 		return runContent(args[1:])
 	case "audio":
 		return runAudio(args[1:])
+	case "web":
+		return runWeb(args[1:])
 	case "doctor":
 		return runDoctor(args[1:])
 	case "gc":
@@ -64,6 +72,210 @@ func Run(args []string) int {
 		printUsage()
 		return 1
 	}
+}
+
+func runWeb(args []string) int {
+	if len(args) == 0 {
+		printUsage()
+		return 1
+	}
+	switch args[0] {
+	case "serve":
+		return runWebServe(args[1:])
+	default:
+		printUsage()
+		return 1
+	}
+}
+
+func runWebServe(args []string) int {
+	fs := flag.NewFlagSet("web serve", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	port := fs.Int("port", 8765, "port")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	if err := webserver.Serve(webserver.ServerOptions{Port: *port}); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	return 0
+}
+
+func runHelloChinese(args []string) int {
+	if len(args) == 0 {
+		printUsage()
+		return 1
+	}
+	switch args[0] {
+	case "import":
+		return runHelloChineseImport(args[1:])
+	case "audio-backfill":
+		return runHelloChineseAudioBackfill(args[1:])
+	default:
+		printUsage()
+		return 1
+	}
+}
+
+func runHelloChineseAudioBackfill(args []string) int {
+	fs := flag.NewFlagSet("hellochinese audio-backfill", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	voicesRaw := fs.String("voices", strings.Join(hellochinese.DefaultVoices, ","), "comma-separated voices")
+	concurrency := fs.Int("concurrency", 4, "parallel audio workers")
+	limit := fs.Int("limit", 0, "max imported items to backfill; 0 means all")
+	_ = fs.Bool("json", true, "Output JSON envelope")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	result, err := hellochinese.BackfillAudio(hellochinese.AudioBackfillOptions{
+		Voices:      splitCSV(*voicesRaw),
+		Concurrency: *concurrency,
+		Limit:       *limit,
+	})
+	if err != nil {
+		var toolMissing process.ToolMissingError
+		if errors.As(err, &toolMissing) {
+			return emitTypedError("hellochinese.audio-backfill", "TOOL_MISSING", err.Error(), map[string]any{"tool": toolMissing.Tool})
+		}
+		var processFailed process.ProcessFailedError
+		if errors.As(err, &processFailed) {
+			return emitTypedError("hellochinese.audio-backfill", "BACKEND_FAILED", "audio backend failed during HelloChinese backfill", map[string]any{
+				"cmd":        processFailed.Cmd,
+				"returncode": processFailed.ReturnCode,
+				"stderr":     trim(processFailed.Stderr),
+			})
+		}
+		return emitTypedError("hellochinese.audio-backfill", "BACKEND_FAILED", err.Error(), nil)
+	}
+	out := envelope.OK("hellochinese.audio-backfill", map[string]any{
+		"tasks_seen":      result.TasksSeen,
+		"audio_generated": result.AudioGenerated,
+		"audio_existing":  result.AudioExisting,
+		"audio_failed":    result.AudioFailed,
+	}, nil, false, map[string]any{"concurrency": *concurrency, "limit": *limit})
+	return emit(out)
+}
+
+func runHelloChineseImport(args []string) int {
+	fs := flag.NewFlagSet("hellochinese import", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	path := fs.String("path", "", "HelloChinese JSONL path")
+	audioMode := fs.String("audio", "none", "none|sentence")
+	voicesRaw := fs.String("voices", strings.Join(hellochinese.DefaultVoices, ","), "comma-separated voices")
+	_ = fs.Bool("json", true, "Output JSON envelope")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	voices := splitCSV(*voicesRaw)
+	result, err := hellochinese.ImportCorpus(hellochinese.ImportOptions{Path: *path, AudioMode: *audioMode, Voices: voices})
+	if err != nil {
+		var toolMissing process.ToolMissingError
+		if errors.As(err, &toolMissing) {
+			return emitTypedError("hellochinese.import", "TOOL_MISSING", err.Error(), map[string]any{"tool": toolMissing.Tool, "path": *path, "audio": *audioMode})
+		}
+		var processFailed process.ProcessFailedError
+		if errors.As(err, &processFailed) {
+			return emitTypedError("hellochinese.import", "BACKEND_FAILED", "audio backend failed during HelloChinese import", map[string]any{
+				"cmd":        processFailed.Cmd,
+				"returncode": processFailed.ReturnCode,
+				"stderr":     trim(processFailed.Stderr),
+				"path":       *path,
+				"audio":      *audioMode,
+			})
+		}
+		return emitTypedError("hellochinese.import", "INVALID_ARGUMENT", err.Error(), map[string]any{"path": *path, "audio": *audioMode})
+	}
+	out := envelope.OK("hellochinese.import", map[string]any{
+		"rows_seen":       result.RowsSeen,
+		"rows_inserted":   result.RowsInserted,
+		"rows_existing":   result.RowsExisting,
+		"audio_generated": result.AudioGenerated,
+		"audio_existing":  result.AudioExisting,
+		"audio_failed":    result.AudioFailed,
+	}, nil, false, nil)
+	return emit(out)
+}
+
+func runCram(args []string) int {
+	if len(args) == 0 {
+		printUsage()
+		return 1
+	}
+	switch args[0] {
+	case "next":
+		return runCramNext(args[1:])
+	case "grade":
+		return runCramGrade(args[1:])
+	default:
+		printUsage()
+		return 1
+	}
+}
+
+func runCramNext(args []string) int {
+	fs := flag.NewFlagSet("cram next", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	limit := fs.Int("limit", 1, "limit")
+	_ = fs.Bool("json", true, "Output JSON envelope")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	now, err := clock.NowUTC()
+	if err != nil {
+		return emitError("cram.next", err)
+	}
+	cards, err := hellochinese.NextCards(*limit, now)
+	if err != nil {
+		return emitError("cram.next", err)
+	}
+	payload := []map[string]any{}
+	for _, card := range cards {
+		payload = append(payload, map[string]any{
+			"item_id":              card.ItemID,
+			"learning_order":       card.LearningOrder,
+			"word":                 card.Word,
+			"pinyin":               card.Pinyin,
+			"meaning":              card.Meaning,
+			"sentence_hanzi":       card.SentenceHanzi,
+			"sentence_pinyin":      card.SentencePinyin,
+			"sentence_meaning":     card.SentenceMeaning,
+			"sentence_audio_paths": card.SentenceAudioPaths,
+			"status":               card.Status,
+			"due_at":               card.DueAt,
+			"unknown_other_words":  card.UnknownOtherWords,
+		})
+	}
+	out := envelope.OK("cram.next", map[string]any{"cards": payload}, nil, false, map[string]any{"limit": *limit})
+	return emit(out)
+}
+
+func runCramGrade(args []string) int {
+	fs := flag.NewFlagSet("cram grade", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	item := fs.String("item", "", "item id")
+	grade := fs.String("grade", "", "again|hard|good|easy")
+	_ = fs.Bool("json", true, "Output JSON envelope")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	now, err := clock.NowUTC()
+	if err != nil {
+		return emitError("cram.grade", err)
+	}
+	result, err := hellochinese.GradeCard(*item, *grade, now)
+	if err != nil {
+		return emitTypedError("cram.grade", "INVALID_ARGUMENT", err.Error(), map[string]any{"item": *item, "grade": *grade})
+	}
+	out := envelope.OK("cram.grade", map[string]any{
+		"item_id":     result.ItemID,
+		"grade":       result.Grade,
+		"status":      result.Status,
+		"next_due_at": result.NextDueAt,
+		"seen_count":  result.SeenCount,
+		"lapse_count": result.LapseCount,
+	}, nil, false, nil)
+	return emit(out)
 }
 
 func runVersion(args []string) int {
@@ -1077,6 +1289,18 @@ func trim(text string) string {
 	return text[:limit]
 }
 
+func splitCSV(value string) []string {
+	parts := strings.Split(value, ",")
+	out := []string{}
+	for _, part := range parts {
+		part = strings.TrimSpace(part)
+		if part != "" {
+			out = append(out, part)
+		}
+	}
+	return out
+}
+
 func emit(payload any) int {
 	body, err := jsonio.Dumps(payload)
 	if err != nil {
@@ -1109,7 +1333,7 @@ func emitTypedError(command, errorType, message string, details map[string]any) 
 
 func printUsage() {
 	fmt.Fprintln(os.Stderr, "usage: xuezh <command> [args]")
-	fmt.Fprintln(os.Stderr, "commands: version, snapshot, db, dataset, review, srs, report, event, content, audio, doctor, gc")
+	fmt.Fprintln(os.Stderr, "commands: version, snapshot, db, dataset, hellochinese, cram, review, srs, report, event, content, audio, web, doctor, gc")
 }
 
 var ErrNotImplemented = errors.New("not implemented")
