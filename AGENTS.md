@@ -101,6 +101,13 @@ See `specs/north-stars.md`.
 
    Contract drift will fail `tests/contract/` — fix the contract, schema, and BDD in the same ticket.
 
+5) **Pre-release schema policy**
+   - This repo is pre-release. Prefer editing the current schema directly over
+     migration chains, compatibility layers, fallback reads, dual writes, or
+     defensive shims.
+   - If local dev data matters, make a one-off backup/export first, then keep
+     the application code simple.
+
 ## RGR workflow (required)
 
 For each ticket:
@@ -222,3 +229,27 @@ Environment knobs (set via plugin `config.env`):
 
 Config resolution:
 - Default path: `~/.config/xuezh/config.toml` (or `$XDG_CONFIG_HOME/xuezh/config.toml`)
+
+## Cram app operating notes
+
+- Local runner: `scripts/run-cram-local.sh`; default URL is `http://127.0.0.1:8765/`.
+- Canonical content comes from the shared HelloChinese/Pleco text source plus Travel Survival text. Pleco backup content is only for matching score/recency metadata, not for replacing card text.
+- Audio generation is fill-missing by default. Existing voice files are reused when the DB path exists and the file is present. Do not regenerate/replace audio unless Josh explicitly asks; replacement requires `XUEZH_AUDIO_REPLACE=1` / `--replace`.
+- The calibrated default voices/rates are in `scripts/run-cram-local.sh`: Xiaoxiao `-23%`, Xiaoyi `-15%`, Yunxi `-15%`, Yunyang `-25%`.
+- For UI-only debugging, start with `XUEZH_SKIP_AUDIO_BACKFILL=1 ./scripts/run-cram-local.sh` so review work cannot accidentally kick off TTS.
+- The web server sets no-store headers for app assets; if the in-app browser looks stale, force reload before judging the UI.
+- Design-system route: `http://127.0.0.1:8765/#design-system`. It must include type roles, controls, learning bars, flashcard before/after/long states, and history.
+- The design system must render the same production React components used by the app for important surfaces, especially the review card. Do not create fake duplicate flashcard markup/CSS that can drift from production.
+- Active review rounds are server-owned. The browser may cache UI-only state, but the authoritative current card, remaining queue, retry queue, reveal state, and reviewed history live in `cram_review_sessions`. Do not reintroduce `sessionStorage` as the source of truth for review progress.
+- Review answers must be ACID: score row, review event, and review-session queue update happen together, or none of them happen. Undo must restore both the previous score row and the previous session queue snapshot.
+- Mobile QA matters. Check at about iPhone width (`393x852` is fine): no horizontal overflow, no truncated action labels, pinyin only after reveal, source headers sticky in the review-picker list, and visible rows not bleeding through sticky headers.
+- For any web UI change, run one proactive visual pass before handoff. Build/restart, then capture screenshots for at least:
+  - review card before reveal
+  - review card after reveal
+  - review card with long Chinese sentence
+  - review card with long English answer
+  - picker with sticky category headers
+- Screenshots must use the actual target CSS viewport, not a cropped desktop viewport. If using headless Chrome, drive DevTools `Emulation.setDeviceMetricsOverride` to `393x852`; `--window-size=393,852` alone can still lay out at 500px and hide mobile regressions.
+- Reject the UI if screenshots show wrapped header/footer controls, controls covering text, clipped text, text hidden behind mobile browser chrome, horizontal overflow, unstable prompt position between reveal states, or production and design-system components disagreeing.
+- Do not split Chinese prompt text into one span per character. It breaks copy/paste by inserting line breaks between every Hanzi. Keep sentence text as normal text nodes except the highlighted target span.
+- Do grading/session smoke tests in a throwaway workspace, not Josh's real `~/.local/share/xuezh/cram-local` DB. Use `XUEZH_WORKSPACE_DIR=/private/tmp/xuezh-cram-smoke-...` and import with `--audio none`; start the local web server on a spare port and verify start → reveal → incorrect → reload active session → correct → undo. Only use the real DB for read-only UI screenshots unless Josh explicitly asks to mutate it.

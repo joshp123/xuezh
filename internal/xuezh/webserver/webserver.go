@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/joshp123/xuezh/internal/xuezh/hellochinese"
+	"github.com/joshp123/xuezh/internal/xuezh/cram"
 	"github.com/joshp123/xuezh/internal/xuezh/paths"
 )
 
@@ -23,41 +23,142 @@ func Serve(opts ServerOptions) error {
 		port = 8765
 	}
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /api/cram/next", handleNext)
-	mux.HandleFunc("POST /api/cram/grade", handleGrade)
+	mux.HandleFunc("GET /api/cram/overview", handleOverview)
+	mux.HandleFunc("POST /api/cram/preview", handlePreview)
+	mux.HandleFunc("GET /api/cram/session", handleActiveSession)
+	mux.HandleFunc("POST /api/cram/session/start", handleStartSession)
+	mux.HandleFunc("POST /api/cram/session/reveal", handleRevealSession)
+	mux.HandleFunc("POST /api/cram/session/repeat", handleRepeatSession)
+	mux.HandleFunc("POST /api/cram/session/grade", handleSessionGrade)
+	mux.HandleFunc("POST /api/cram/session/undo", handleSessionUndo)
 	mux.HandleFunc("GET /artifacts/", handleArtifact)
 	mux.Handle("/", staticHandler())
 	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), mux)
 }
 
-func handleNext(w http.ResponseWriter, r *http.Request) {
-	cards, err := hellochinese.NextCards(1, time.Now().UTC())
+func handleOverview(w http.ResponseWriter, r *http.Request) {
+	overview, err := cram.OverviewFor(time.Now().UTC())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
-	if len(cards) == 0 {
-		writeJSON(w, map[string]any{"card": nil})
-		return
-	}
-	writeJSON(w, map[string]any{"card": cards[0]})
+	writeJSON(w, overview)
 }
 
-func handleGrade(w http.ResponseWriter, r *http.Request) {
+func handlePreview(w http.ResponseWriter, r *http.Request) {
+	var req cram.PracticeFilters
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	preview, err := cram.PracticePreviewFor(req, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, preview)
+}
+
+func handleActiveSession(w http.ResponseWriter, r *http.Request) {
+	session, err := cram.ActiveReviewSession()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, map[string]any{"session": session})
+}
+
+func handleStartSession(w http.ResponseWriter, r *http.Request) {
 	var req struct {
-		ItemID string `json:"item_id"`
-		Grade  string `json:"grade"`
+		Limit   int      `json:"limit"`
+		CardIDs []string `json:"card_ids"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	result, err := hellochinese.GradeCard(req.ItemID, req.Grade, time.Now().UTC())
+	session, err := cram.StartReviewSession(cram.ReviewSessionStartOptions{Limit: req.Limit, CardIDs: req.CardIDs}, time.Now().UTC())
 	if err != nil {
 		writeError(w, http.StatusBadRequest, err)
 		return
 	}
-	writeJSON(w, result)
+	writeJSON(w, map[string]any{"session": session})
+}
+
+func handleRevealSession(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SessionID string `json:"session_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	session, err := cram.RevealReviewSession(req.SessionID, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, map[string]any{"session": session})
+}
+
+func handleRepeatSession(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SessionID string `json:"session_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	session, err := cram.ToggleReviewSessionRepeat(req.SessionID, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, map[string]any{"session": session})
+}
+
+func handleSessionGrade(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		ItemID     string `json:"item_id"`
+		Grade      string `json:"grade"`
+		SessionID  string `json:"session_id"`
+		ShownAt    string `json:"shown_at"`
+		AnsweredAt string `json:"answered_at"`
+		ElapsedMS  int    `json:"elapsed_ms"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	session, result, err := cram.GradeReviewSession(cram.GradeOptions{
+		ItemID:     req.ItemID,
+		Grade:      req.Grade,
+		SessionID:  req.SessionID,
+		ShownAt:    req.ShownAt,
+		AnsweredAt: req.AnsweredAt,
+		ElapsedMS:  req.ElapsedMS,
+	}, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, map[string]any{"session": session, "grade": result})
+}
+
+func handleSessionUndo(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		SessionID string `json:"session_id"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	session, result, err := cram.UndoReviewSession(req.SessionID, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, map[string]any{"session": session, "undo": result})
 }
 
 func handleArtifact(w http.ResponseWriter, r *http.Request) {
@@ -73,9 +174,14 @@ func handleArtifact(w http.ResponseWriter, r *http.Request) {
 func staticHandler() http.Handler {
 	dist := filepath.Join("web", "dist")
 	if info, err := os.Stat(dist); err == nil && info.IsDir() {
-		return http.FileServer(http.Dir(dist))
+		files := http.FileServer(http.Dir(dist))
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			writeNoStore(w)
+			files.ServeHTTP(w, r)
+		})
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		writeNoStore(w)
 		if r.URL.Path != "/" {
 			http.NotFound(w, r)
 			return
@@ -83,6 +189,12 @@ func staticHandler() http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`<main style="font:16px system-ui;padding:32px;max-width:720px;margin:auto"><h1>xuezh web assets not built</h1><p>Run <code>cd web && pnpm install && pnpm build</code>, then restart <code>xuezh web serve</code>.</p></main>`))
 	})
+}
+
+func writeNoStore(w http.ResponseWriter) {
+	w.Header().Set("Cache-Control", "no-store, max-age=0")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 }
 
 func writeJSON(w http.ResponseWriter, value any) {

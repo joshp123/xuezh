@@ -1,0 +1,331 @@
+.designSystem {
+  --ds-text: #0f172a;
+  --ds-muted: #64748b;
+  --ds-border: #e2e8f0;
+  --ds-blue: #2563eb;
+  --ds-phone-width: 393px;
+  --ds-phone-height: 852px;
+  --ds-weight-regular: 400;
+  --ds-weight-medium: 600;
+  --ds-weight-bold: 700;
+  width: min(1320px, 100%);
+  height: 100dvh;
+  margin: 0 auto;
+  padding: 40px 28px 80px;
+  color: var(--ds-text);
+  overflow: auto;
+  overflow-wrap: normal;
+  -webkit-overflow-scrolling: touch;
+}
+
+.designSystem,
+.designSystem * {
+  box-sizing: border-box;
+}
+
+.dsIntro {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin-bottom: 32px;
+}
+
+.dsIntro p,
+.dsIntro h1,
+.dsIntro span,
+.dsSection h2,
+.dsTypeGrid > div,
+.dsControlGrid > *,
+.dsReviewCard,
+.dsHistory {
+  min-width: 0;
+}
+
+.dsIntro p,
+.dsIntro h1,
+.dsIntro span,
+.dsSection h2 {
+  margin: 0;
+}
+
+.dsIntro p {
+  color: var(--ds-muted);
+  font-size: 13px;
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.08em;
+}
+
+.dsIntro h1 {
+  margin-top: 4px;
+  font-size: 44px;
+  font-weight: var(--ds-weight-bold);
+  line-height: 1;
+}
+
+.dsIntro span {
+  display: block;
+  margin-top: 8px;
+  color: #475569;
+}
+
+.dsSection {
+  display: grid;
+  gap: 16px;
+  padding: 28px 0;
+  border-top: 1px solid var(--ds-border);
+}
+
+.dsSection h2 {
+  color: #475569;
+  font-size: 14px;
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dsSectionNote {
+  max-width: 760px;
+  margin: 0;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.dsTypeGrid,
+.dsControlGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dsTypeGrid > div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--ds-border);
+  border-radius: 8px;
+}
+
+.dsTypeGrid small,
+.dsTypeGrid em,
+.dsStickyHeaderExample span,
+.dsCategoryRow span,
+.dsHistory p {
+  color: var(--ds-muted);
+  font-style: normal;
+}
+
+.dsTypeGrid span,
+.dsTypeGrid b {
+  font-size: 16px;
+  font-weight: var(--ds-weight-medium);
+}
+
+.dsPageTitle {
+  font-size: 36px;
+  font-weight: var(--ds-weight-bold);
+  line-height: 1;
+}
+
+.dsChineseType {
+  font-size: 48px;
+  font-weight: var(--ds-weight-bold);
+  line-height: 1;
+}
+
+.dsPinyinType {
+  color: var(--ds-muted);
+}
+
+.dsButton,
+.dsToggle {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ds-text);
+  padding: 0 14px;
+  font: inherit;
+  font-weight: var(--ds-weight-medium);
+}
+
+.dsPrimary {
+  border-color: var(--ds-blue);
+  background: var(--ds-blue);
+  color: #ffffff;
+}
+
+.dsTextButton {
+  min-height: 32px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ds-blue);
+  padding: 0;
+  font: inherit;
+  font-weight: var(--ds-weight-medium);
+  text-decoration: none;
+}
+
+.dsToggle {
+  justify-content: flex-start;
+  background: #f8fafc;
+}
+
+.dsToggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: #2563eb;
+}
+
+.dsStickyHeaderExample {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--ds-border);
+  background: #ffffff;
+}
+
+.dsStickyHeaderExample > div:first-child {
+  display: grid;
+  gap: 3px;
+  max-width: 320px;
+}
+
+.dsStickyHeaderExample > div:last-child {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dsLearningBar {
+  height: 8px;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--ds-border);
+}
+
+.dsLearningBar i {
+  min-width: 4px;
+}
+
+.dsScoreNone { background: #cbd5e1; }
+.dsScoreLow { background: #f97316; }
+.dsScoreLearned { background: #22c55e; }
+.dsScoreStrong { background: #15803d; }
+
+.dsRows {
+  display: grid;
+  border-top: 1px solid var(--ds-border);
+}
+
+.dsCategoryRow {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr) minmax(220px, 320px);
+  gap: 12px;
+  align-items: center;
+  border-bottom: 1px solid var(--ds-border);
+}
+
+.dsCheck {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: var(--ds-weight-bold);
+}
+
+.dsCheck.checked {
+  border-color: var(--ds-blue);
+  background: var(--ds-blue);
+}
+
+.dsDisclosure {
+  min-height: 28px;
+  border: 0;
+  background: transparent;
+  color: #64748b;
+  padding: 0;
+}
+
+.dsCategoryRow strong {
+  min-width: 0;
+  line-height: 1.25;
+  font-size: 16px;
+}
+
+.dsCategoryRow > div {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  width: 100%;
+}
+
+@media (max-width: 720px) {
+  .designSystem {
+    padding: 24px 20px 56px;
+  }
+
+  .dsIntro {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .dsIntro h1 {
+    font-size: 36px;
+  }
+
+  .dsTypeGrid,
+  .dsControlGrid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dsStickyHeaderExample {
+    grid-template-columns: 1fr;
+  }
+
+  .dsStickyHeaderExample > div:last-child {
+    justify-content: flex-start;
+  }
+
+  .dsCategoryRow {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .dsCategoryRow > div {
+    grid-column: 3;
+    justify-items: start;
+    max-width: 220px;
+  }
+
+}
+
+@media (max-width: 560px) {
+  .designSystem {
+    padding: 24px 20px 56px;
+  }
+
+  .dsTypeGrid,
+  .dsControlGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dsIntro h1 {
+    font-size: 34px;
+  }
+
+}

@@ -1,0 +1,490 @@
+.review {
+  --review-controls-height: 44px;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) var(--review-controls-height) auto;
+  gap: 18px;
+  width: 100%;
+  height: min(760px, 100%);
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.review > * {
+  min-width: 0;
+}
+
+.reviewTop {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.reviewTop span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.narrowLabel {
+  display: none;
+}
+
+.mobileMeta {
+  display: none;
+}
+
+.repeatButton.active {
+  border-color: #f59e0b;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.studyStack {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) 150px;
+  align-content: stretch;
+  gap: clamp(20px, 3.4vh, 32px);
+  min-height: 0;
+}
+
+.target {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: clamp(8px, 1.8vh, 16px);
+  padding-top: clamp(12px, 3dvh, 30px);
+  text-align: center;
+}
+
+.targetWord {
+  font-size: clamp(64px, 11vw, 112px);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.targetWordPinyin {
+  min-height: 22px;
+  visibility: hidden;
+  color: #64748b;
+  font-size: clamp(18px, 4vw, 24px);
+  font-weight: 600;
+  line-height: 1;
+}
+
+.targetWordPinyin.visible {
+  visibility: visible;
+}
+
+.sentenceWrap {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  overflow: hidden;
+}
+
+.sentencePinyinToggle {
+  min-height: 28px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.sentencePinyinLine {
+  min-height: 18px;
+  visibility: hidden;
+  color: #64748b;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.sentencePinyinLine.visible {
+  visibility: visible;
+}
+
+.sentence {
+  min-height: 78px;
+  width: calc(100% - 32px);
+  text-align: center;
+  font-size: clamp(34px, 6.4vw, 64px);
+  line-height: 1;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-break: strict;
+  white-space: normal;
+}
+
+.sentence mark {
+  border-radius: 6px;
+  background: #bfdbfe;
+  color: inherit;
+  padding: 0 0.06em;
+}
+
+.noBreak {
+  white-space: nowrap;
+}
+
+.reviewTop .audioButton,
+.controls button {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.reviewTop .audioButton {
+  min-width: 96px;
+  min-height: 36px;
+  border-radius: 999px;
+  padding: 0 12px;
+  color: #334155;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.playMark {
+  font-size: 12px;
+  line-height: 1;
+}
+
+.speechMark {
+  font-weight: 700;
+  line-height: 1;
+}
+
+.reviewTop .audioButton kbd,
+.controls kbd {
+  margin-right: 0;
+}
+
+.answer {
+  width: 100%;
+  min-height: 150px;
+  max-height: 150px;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 8px;
+  text-align: center;
+  padding: 0;
+  overflow: hidden;
+}
+
+.answer.prompt {
+  min-height: 150px;
+  padding: 0;
+}
+
+.meaning {
+  max-width: calc(100% - 32px);
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 700;
+  line-height: 1.12;
+  color: #111827;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.sentenceMeaning {
+  margin: 6px auto 0;
+  max-width: calc(100% - 32px);
+  color: #64748b;
+  font-size: 17px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.controls {
+  display: grid;
+  gap: 12px;
+  margin-top: 0;
+  min-height: var(--review-controls-height);
+  align-content: end;
+}
+
+.controlsReveal {
+  display: flex;
+  justify-content: center;
+}
+
+.controlsTwo {
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+}
+
+.revealButton {
+  width: min(320px, 100%);
+}
+
+.saved {
+  text-align: center;
+  color: #287349;
+}
+
+.sessionPanel {
+  display: grid;
+  grid-template-columns: auto auto auto auto;
+  align-items: center;
+  justify-content: start;
+  gap: 10px;
+  min-height: 48px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.sessionPanel strong {
+  color: #111827;
+}
+
+.sessionCounts {
+  white-space: nowrap;
+}
+
+.lastReviewPill {
+  justify-self: start;
+  min-width: 0;
+  max-width: min(220px, 100%);
+  display: inline-flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 4px 8px;
+  color: #111827;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.lastReviewPill em {
+  color: #64748b;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.lastReviewPill strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lastReviewPill .attention {
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.sessionAction {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 14px;
+}
+
+@media (max-width: 720px) {
+  .review {
+    --review-controls-height: 96px;
+    height: 100%;
+    min-height: 0;
+    gap: 10px;
+  }
+
+  .sentence {
+    width: min(353px, calc(100vw - 40px));
+    min-height: 72px;
+    font-size: clamp(25px, 8.6vw, 36px);
+    line-height: 1.08;
+    word-break: normal;
+    overflow-wrap: normal;
+  }
+
+  .sentencePinyinLine {
+    width: min(353px, calc(100vw - 40px));
+    font-size: 13px;
+  }
+
+  .sentencePinyinToggle {
+    font-size: 12px;
+  }
+
+  .targetWord {
+    font-size: clamp(56px, 17vw, 78px);
+    font-weight: 700;
+    overflow-wrap: normal;
+  }
+
+  .studyStack {
+    grid-template-rows: minmax(0, 1fr) 160px;
+    gap: clamp(14px, 2.4vh, 22px);
+  }
+
+  .answer,
+  .answer.prompt {
+    justify-self: center;
+    width: min(353px, calc(100vw - 40px));
+    max-width: calc(100vw - 40px);
+    min-height: 160px;
+    max-height: 160px;
+  }
+
+  .sentenceWrap {
+    max-width: calc(100vw - 40px);
+  }
+
+  .reviewTop,
+  .sessionPanel {
+    justify-self: center;
+    width: min(353px, calc(100vw - 40px));
+  }
+
+  .controls {
+    justify-self: center;
+    width: min(353px, calc(100vw - 40px));
+    gap: 8px;
+  }
+
+  .meaning {
+    font-size: clamp(22px, 6vw, 28px);
+  }
+
+  .sentenceMeaning {
+    font-size: 15px;
+  }
+
+  .controlsTwo,
+  .controlsReveal {
+    grid-template-columns: 1fr;
+  }
+
+  .controlsReveal {
+    display: grid;
+  }
+
+  .revealButton {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .reviewTop {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "cards meta audio";
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .reviewTop > button:first-child {
+    grid-area: cards;
+  }
+
+  .reviewTop > span {
+    grid-area: meta;
+  }
+
+  .reviewTop > .audioButton {
+    grid-area: audio;
+  }
+
+  .reviewTop span {
+    grid-column: auto;
+    grid-row: auto;
+    white-space: nowrap;
+    text-align: center;
+  }
+
+  .desktopMeta {
+    display: none;
+  }
+
+  .mobileMeta {
+    display: inline;
+  }
+
+  .reviewTop button {
+    min-height: 36px;
+    padding: 0 10px;
+    font-size: 13px;
+  }
+
+  .reviewTop .repeatButton {
+    display: none;
+  }
+
+  .wideLabel {
+    display: none;
+  }
+
+  .narrowLabel {
+    display: inline;
+  }
+
+  .review kbd {
+    display: none;
+  }
+
+  .reviewTop .audioButton {
+    min-width: 54px;
+    min-height: 36px;
+    padding: 0 8px;
+    gap: 4px;
+  }
+
+  .sessionPanel {
+    grid-template-columns: minmax(96px, 1fr) auto auto auto;
+    justify-content: stretch;
+    min-height: 44px;
+    gap: 8px;
+    font-size: 13px;
+    overflow: hidden;
+  }
+
+  .sessionCounts {
+    justify-self: start;
+  }
+
+  .lastReviewPill {
+    justify-self: center;
+    max-width: 74px;
+    padding: 3px 6px;
+  }
+
+  .lastReviewPill em:first-child {
+    display: none;
+  }
+
+  .sessionAction {
+    min-height: 28px;
+    border: 0;
+    background: transparent;
+    color: #2563eb;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .lastReviewPill {
+    border: 0;
+    background: #f8fafc;
+  }
+}

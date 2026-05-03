@@ -45,11 +45,11 @@ All commands return one of:
 - provenance/licensing: see `specs/datasets/provenance.md`
 
 ### hellochinese import
-- `xuezh hellochinese import --path <hellochinese_words.jsonl> [--audio none|sentence] [--voices <comma_list>] --json`
+- `xuezh hellochinese import --path <Full Pleco Import.txt> [--audio none|sentence] [--voices <comma_list>] --json`
 - command id: `hellochinese.import`
 - output schema: `schemas/hellochinese.import.schema.json`
-- imports one review item per row, using `index` as learning order when present
-- source `sentence_hanzi` is cleaned before storage/audio/card display; raw spaced text is retained only as provenance
+- imports one review item per canonical Pleco-text row; section headers become categories and file order is learning order
+- source sentence text is cleaned before storage/audio/card display; raw text is retained only as provenance
 - `--audio sentence` uses the existing `audio tts` backend and should only be used after a one-sentence smoke test succeeds in `devenv`
 
 ### hellochinese audio-backfill
@@ -59,22 +59,47 @@ All commands return one of:
 - generates missing sentence audio for already-imported HelloChinese items
 - audio generation may run concurrently; SQLite updates are serialized so per-voice paths are not lost
 
+### travel import
+- `xuezh travel import --path <Travel Survival Pleco Import.txt> [--audio none|sentence] [--voices <comma_list>] --json`
+- command id: `travel.import`
+- output schema: `schemas/travel.import.schema.json`
+- imports one review item per canonical Pleco-text row; `Travel Survival/` is stripped from stored category names
+
+### pleco score-import
+- `xuezh pleco score-import --path <Pleco Flash Backup.pqb> --json`
+- command id: `pleco.score-import`
+- output schema: `schemas/pleco.score-import.schema.json`
+- imports only score/recency metadata from the Pleco backup; it does not read Pleco card text as canonical content
+- maps Pleco scores by root category, child category, and assignment order; count mismatches are left unseeded and reported
+
+### cram overview
+- `xuezh cram overview --json`
+- command id: `cram.overview`
+- output schema: `schemas/cram.overview.schema.json`
+- returns source/category facts only; product UI derives practice pools from live score rows
+
+### cram audio-backfill
+- `xuezh cram audio-backfill [--source all|hellochinese|travel_survival] [--limit N] [--concurrency N] [--voices <comma_list>] [--rates <voice=rate,...>] [--replace] --json`
+- command id: `cram.audio-backfill`
+- output schema: `schemas/cram.audio-backfill.schema.json`
+- generates missing sentence audio for the canonical cram deck
+- default voices are the four calibrated Mandarin voices, with slower per-voice Edge TTS rates; `--replace` clears stored audio paths before regenerating the selected scope
+
 ### cram next
 - `xuezh cram next --limit 1 --json`
 - command id: `cram.next`
 - output schema: `schemas/cram.next.schema.json`
-- returns due cram cards first, then new cards in learning order
+- returns not-learned or due cards first, with missed-before cards and lower scores earlier inside that pool
 - card front is the Chinese sentence with the target word available for highlighting by clients
 
 ### cram grade
-- `xuezh cram grade --item <ITEM_ID> --grade again|hard|good|easy --json`
+- `xuezh cram grade --item <ITEM_ID> --grade incorrect|correct --json`
 - command id: `cram.grade`
 - output schema: `schemas/cram.grade.schema.json`
-- scheduling is mechanical:
-  - `again`: now
-  - `hard`: now + 10 minutes
-  - `good`: now + 2 hours
-  - `easy`: now + 24 hours
+- updates the live Pleco-style score facts for the card:
+  - `incorrect`: answer quality 2; resets score to the imported profile's incorrect score
+  - `correct`: answer quality 6; increases score using the imported profile settings
+- `next_due_at` is `last_reviewed + score / points_per_day`
 
 ### review start
 - `xuezh review start --limit 10 --json`

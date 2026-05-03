@@ -82,8 +82,12 @@ func buildConvertCommand(inPath, outPath, format string) ([]string, error) {
 	return cmd, nil
 }
 
-func buildTTSCommand(text, voice, outPath string) []string {
-	return []string{"edge-tts", "--text", text, "--voice", voice, "--write-media", outPath}
+func buildTTSCommand(text, voice, rate, outPath string) []string {
+	cmd := []string{"edge-tts", "--text", text, "--voice", voice}
+	if strings.TrimSpace(rate) != "" {
+		cmd = append(cmd, "--rate="+strings.TrimSpace(rate))
+	}
+	return append(cmd, "--write-media", outPath)
 }
 
 func buildSTTCommand(inPath, outDir string) []string {
@@ -157,6 +161,10 @@ func ConvertAudio(inPath, outPath, format, backend, purpose string) (AudioResult
 }
 
 func TTSAudio(text, voice, outPath, backend, purpose string) (AudioResult, error) {
+	return TTSAudioWithRate(text, voice, "", outPath, backend, purpose)
+}
+
+func TTSAudioWithRate(text, voice, rate, outPath, backend, purpose string) (AudioResult, error) {
 	if backend != "edge-tts" {
 		return AudioResult{}, fmt.Errorf("Unsupported backend: %s", backend)
 	}
@@ -178,7 +186,7 @@ func TTSAudio(text, voice, outPath, backend, purpose string) (AudioResult, error
 		return AudioResult{}, err
 	}
 	tempPath := filepath.Join(filepath.Dir(resolvedOut), ".tts-"+uuid.New().String()+".mp3")
-	cmd := buildTTSCommand(text, resolvedVoice, tempPath)
+	cmd := buildTTSCommand(text, resolvedVoice, rate, tempPath)
 	if _, err := process.RunChecked(cmd); err != nil {
 		return AudioResult{}, err
 	}
@@ -203,7 +211,7 @@ func TTSAudio(text, voice, outPath, backend, purpose string) (AudioResult, error
 	if err != nil {
 		return AudioResult{}, err
 	}
-	data := map[string]any{"text": text, "voice": resolvedVoice, "out": artifact.Path, "backend": map[string]any{"id": backend, "features": []string{"tts"}}}
+	data := map[string]any{"text": text, "voice": resolvedVoice, "rate": strings.TrimSpace(rate), "out": artifact.Path, "backend": map[string]any{"id": backend, "features": []string{"tts"}}}
 	return AudioResult{Data: data, Artifacts: []envelope.Artifact{artifact}}, nil
 }
 

@@ -1,0 +1,86 @@
+.historyOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  justify-items: end;
+  background: rgb(15 23 42 / 0.18);
+}
+
+.historyDialog {
+  width: min(520px, 100%);
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 16px;
+  padding: 28px;
+  background: #ffffff;
+  box-shadow: -20px 0 40px rgb(15 23 42 / 0.12);
+}
+
+.historyDialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.historyDialog h2 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.historyList {
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  overflow: auto;
+}
+
+.historyItem {
+  display: grid;
+  gap: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.historyItem div:first-child {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: baseline;
+}
+
+.historyItem div:first-child span {
+  min-width: 0;
+  color: #475569;
+  line-height: 1.35;
+}
+
+.historyItem div:first-child em {
+  grid-column: 2;
+  color: #64748b;
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.3;
+}
+
+.historyItem small {
+  color: #64748b;
+}
+
+.historyBadges {
+  display: flex;
+  gap: 6px;
+}
+
+.historyBadges span {
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  padding: 3px 8px;
+  font-size: 13px;
+  font-weight: 700;
+}

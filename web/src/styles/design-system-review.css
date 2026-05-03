@@ -1,0 +1,319 @@
+.dsFlashGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, var(--ds-phone-width));
+  justify-content: center;
+  gap: 22px;
+  align-items: start;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.dsFlashExample {
+  width: var(--ds-phone-width);
+  display: grid;
+  gap: 10px;
+  scroll-snap-align: start;
+}
+
+.dsFlashExampleFull {
+  width: var(--ds-phone-width);
+  height: var(--ds-phone-height);
+  min-height: var(--ds-phone-height);
+}
+
+.designSystemSingle {
+  width: 100%;
+  min-height: 100svh;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  padding: 20px;
+  overflow: auto;
+}
+
+.dsPhoneSpecimen {
+  width: 100%;
+  min-height: 100svh;
+  background: #ffffff;
+}
+
+.designSystemSingle.dsPhoneSpecimen {
+  justify-items: start;
+  padding: 0;
+  overflow: hidden;
+}
+
+.dsReviewSpecimen {
+  width: var(--ds-phone-width);
+  height: var(--ds-phone-height);
+  overflow: hidden;
+  padding: 20px;
+  border: 1px solid var(--ds-border);
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.dsPhoneSpecimen .dsReviewSpecimen {
+  width: var(--ds-phone-width);
+  height: var(--app-height, 100svh);
+  border: 0;
+  border-radius: 0;
+}
+
+.dsReviewSpecimen .review {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+}
+
+.dsReviewSpecimen .review {
+  --review-controls-height: 96px;
+  gap: 10px;
+}
+
+.dsReviewSpecimen .reviewTop,
+.dsReviewSpecimen .sessionPanel {
+  justify-self: center;
+  width: min(353px, 100%);
+}
+
+.dsReviewSpecimen .reviewTop {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-areas: "cards meta audio";
+  gap: 8px;
+  font-size: 12px;
+}
+
+.dsReviewSpecimen .reviewTop > button:first-child {
+  grid-area: cards;
+}
+
+.dsReviewSpecimen .reviewTop > span {
+  grid-area: meta;
+  grid-column: auto;
+  grid-row: auto;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.dsReviewSpecimen .reviewTop > .audioButton {
+  grid-area: audio;
+  min-width: 54px;
+  min-height: 36px;
+  padding: 0 8px;
+  gap: 4px;
+}
+
+.dsReviewSpecimen .reviewTop button {
+  min-height: 36px;
+  padding: 0 10px;
+  font-size: 13px;
+}
+
+.dsReviewSpecimen .desktopMeta,
+.dsReviewSpecimen .wideLabel,
+.dsReviewSpecimen .review kbd,
+.dsReviewSpecimen .reviewTop .repeatButton {
+  display: none;
+}
+
+.dsReviewSpecimen .mobileMeta,
+.dsReviewSpecimen .narrowLabel {
+  display: inline;
+}
+
+.dsReviewSpecimen .studyStack {
+  grid-template-rows: minmax(0, 1fr) 160px;
+  gap: clamp(14px, 2.4vh, 22px);
+}
+
+.dsReviewSpecimen .targetWord {
+  font-size: clamp(56px, 17vw, 78px);
+  font-weight: 700;
+  overflow-wrap: normal;
+}
+
+.dsReviewSpecimen .targetWordPinyin {
+  font-size: clamp(18px, 4vw, 24px);
+}
+
+.dsReviewSpecimen .sentence {
+  width: min(353px, 100%);
+  min-height: 72px;
+  font-size: clamp(25px, 8.6vw, 36px);
+  line-height: 1.08;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+
+.dsReviewSpecimen .sentencePinyinLine,
+.dsReviewSpecimen .answer,
+.dsReviewSpecimen .answer.prompt,
+.dsReviewSpecimen .controls {
+  width: min(353px, 100%);
+}
+
+.dsReviewSpecimen .answer,
+.dsReviewSpecimen .answer.prompt {
+  justify-self: center;
+  min-height: 160px;
+  max-height: 160px;
+}
+
+.dsReviewSpecimen .controls {
+  gap: 8px;
+}
+
+.dsReviewSpecimen .controlsTwo,
+.dsReviewSpecimen .controlsReveal {
+  grid-template-columns: 1fr;
+}
+
+.dsReviewSpecimen .controlsReveal {
+  display: grid;
+}
+
+.dsReviewSpecimen .revealButton {
+  width: 100%;
+}
+
+.dsReviewSpecimen .meaning {
+  font-size: clamp(22px, 6vw, 28px);
+}
+
+.dsReviewSpecimen .sentenceMeaning {
+  font-size: 15px;
+}
+
+.dsReviewSpecimen .sessionPanel {
+  grid-template-columns: minmax(96px, 1fr) auto auto auto;
+  justify-content: stretch;
+  min-height: 44px;
+  gap: 8px;
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.dsReviewSpecimen .lastReviewPill {
+  justify-self: center;
+  max-width: 74px;
+  padding: 3px 6px;
+  border: 0;
+  background: #f8fafc;
+}
+
+.dsReviewSpecimen .lastReviewPill em:first-child {
+  display: none;
+}
+
+.dsReviewSpecimen .sessionAction {
+  min-height: 28px;
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.dsStateHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.dsStateHeader > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.dsStateLabel {
+  color: #475569;
+  font-size: 13px;
+  font-weight: var(--ds-weight-bold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.dsStateHeader span {
+  color: var(--ds-muted);
+  font-size: 13px;
+}
+
+.dsHistory {
+  max-width: 520px;
+  max-height: 520px;
+  overflow: auto;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid var(--ds-border);
+  border-radius: 10px;
+}
+
+.dsHistory header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dsHistory header strong {
+  font-size: 28px;
+  font-weight: var(--ds-weight-bold);
+}
+
+.dsHistory article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding: 12px;
+  border: 1px solid var(--ds-border);
+  border-radius: 8px;
+}
+
+.dsHistory article strong {
+  font-size: 24px;
+  font-weight: var(--ds-weight-bold);
+}
+
+.dsHistory article span {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  line-height: 1.35;
+}
+
+.dsHistory article small {
+  color: var(--ds-muted);
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.dsHistory article em {
+  color: #166534;
+  font-style: normal;
+  font-weight: var(--ds-weight-bold);
+}
+
+.dsHistory article em.bad {
+  color: #991b1b;
+}
+
+@media (max-width: 560px) {
+  .dsFlashGrid {
+    width: calc(100% + 40px);
+    max-width: none;
+    margin-inline: -20px;
+    justify-content: start;
+    scroll-snap-type: x mandatory;
+  }
+}

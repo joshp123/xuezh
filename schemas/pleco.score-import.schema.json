@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "pleco.score-import ok envelope",
+  "type": "object",
+  "required": ["ok", "schema_version", "command", "data", "artifacts", "truncated", "limits"],
+  "properties": {
+    "ok": { "const": true },
+    "schema_version": { "type": "string" },
+    "command": { "const": "pleco.score-import" },
+    "data": {
+      "type": "object",
+      "required": ["canonical_rows", "seeded_rows", "unseeded_rows", "unseeded_categories"],
+      "properties": {
+        "canonical_rows": { "type": "integer" },
+        "seeded_rows": { "type": "integer" },
+        "unseeded_rows": { "type": "integer" },
+        "unseeded_categories": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "artifacts": { "type": "array" },
+    "truncated": { "type": "boolean" },
+    "limits": { "type": "object" }
+  },
+  "additionalProperties": true
+}

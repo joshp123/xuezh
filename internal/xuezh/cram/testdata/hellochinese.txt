@@ -1,0 +1,4 @@
+// HelloChinese/Hello
+你	nǐ	you (singular)你 是 龙大。You (singular) are Long Da.
+我	wǒ	I; me我是龙大。I am Long Da.
+吗	ma	question particle你是中国人吗?Are you Chinese?

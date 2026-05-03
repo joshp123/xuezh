@@ -9,14 +9,18 @@
     "command": { "const": "cram.grade" },
     "data": {
       "type": "object",
-      "required": ["item_id", "grade", "status", "next_due_at", "seen_count", "lapse_count"],
+      "required": ["item_id", "grade", "next_due_at", "interval_minutes", "score", "difficulty", "correct_count", "incorrect_count", "reviewed_count", "scored"],
       "properties": {
         "item_id": { "type": "string" },
-        "grade": { "enum": ["again", "hard", "good", "easy"] },
-        "status": { "type": "string" },
+        "grade": { "enum": ["incorrect", "correct"] },
         "next_due_at": { "type": "string" },
-        "seen_count": { "type": "integer" },
-        "lapse_count": { "type": "integer" }
+        "interval_minutes": { "type": "integer" },
+        "score": { "type": "integer" },
+        "difficulty": { "type": "integer" },
+        "correct_count": { "type": "integer" },
+        "incorrect_count": { "type": "integer" },
+        "reviewed_count": { "type": "integer" },
+        "scored": { "type": "boolean" }
       }
     },
     "artifacts": { "type": "array" },

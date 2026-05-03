@@ -35,7 +35,7 @@
       "cli": "xuezh hellochinese import --path FILE --audio none --json",
       "schema_ok": "schemas/hellochinese.import.schema.json",
       "ticket": "T-16",
-      "example_cli": "xuezh hellochinese import --path internal/xuezh/hellochinese/testdata/min.jsonl --audio none --json"
+      "example_cli": "xuezh hellochinese import --path internal/xuezh/cram/testdata/hellochinese.txt --audio none --json"
     },
     {
       "id": "hellochinese.audio-backfill",
@@ -43,6 +43,34 @@
       "schema_ok": "schemas/hellochinese.audio-backfill.schema.json",
       "ticket": "T-16",
       "example_cli": "xuezh hellochinese audio-backfill --limit 3 --concurrency 4 --json"
+    },
+    {
+      "id": "travel.import",
+      "cli": "xuezh travel import --path FILE --audio none --json",
+      "schema_ok": "schemas/travel.import.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh travel import --path 'Travel Survival Pleco Import.txt' --audio none --json"
+    },
+    {
+      "id": "pleco.score-import",
+      "cli": "xuezh pleco score-import --path FILE --json",
+      "schema_ok": "schemas/pleco.score-import.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh pleco score-import --path 'Pleco Flash Backup.pqb' --json"
+    },
+    {
+      "id": "cram.overview",
+      "cli": "xuezh cram overview --json",
+      "schema_ok": "schemas/cram.overview.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh cram overview --json"
+    },
+    {
+      "id": "cram.audio-backfill",
+      "cli": "xuezh cram audio-backfill --limit 3 --concurrency 4 --replace --json",
+      "schema_ok": "schemas/cram.audio-backfill.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh cram audio-backfill --limit 3 --concurrency 4 --replace --json"
     },
     {
       "id": "cram.next",
@@ -53,10 +81,10 @@
     },
     {
       "id": "cram.grade",
-      "cli": "xuezh cram grade --item ITEM --grade good --json",
+      "cli": "xuezh cram grade --item ITEM --grade correct --json",
       "schema_ok": "schemas/cram.grade.schema.json",
       "ticket": "T-16",
-      "example_cli": "xuezh cram grade --item ITEM --grade good --json"
+      "example_cli": "xuezh cram grade --item ITEM --grade correct --json"
     },
     {
       "id": "review.start",

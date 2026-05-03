@@ -15,9 +15,11 @@
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["item_id", "learning_order", "word", "pinyin", "meaning", "sentence_hanzi", "sentence_audio_paths", "status"],
+            "required": ["item_id", "source", "category", "learning_order", "word", "pinyin", "meaning", "sentence_hanzi", "sentence_audio_paths"],
             "properties": {
               "item_id": { "type": "string" },
+              "source": { "type": "string" },
+              "category": { "type": "string" },
               "learning_order": { "type": "integer" },
               "word": { "type": "string" },
               "pinyin": { "type": "string" },
@@ -26,7 +28,6 @@
               "sentence_pinyin": { "type": "string" },
               "sentence_meaning": { "type": "string" },
               "sentence_audio_paths": { "type": "object" },
-              "status": { "type": "string" },
               "due_at": { "type": ["string", "null"] },
               "unknown_other_words": { "type": ["integer", "null"] }
             }
