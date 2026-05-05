@@ -76,12 +76,24 @@
   border-top: 1px solid var(--ds-border);
 }
 
+.dsChecks {
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.8fr);
+  align-items: start;
+}
+
 .dsSection h2 {
   color: #475569;
   font-size: 14px;
   font-weight: var(--ds-weight-bold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.dsSubhead {
+  margin: 8px 0 0;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: var(--ds-weight-bold);
 }
 
 .dsSectionNote {
@@ -120,6 +132,37 @@
 .dsTypeGrid b {
   font-size: 16px;
   font-weight: var(--ds-weight-medium);
+}
+
+.dsCheckList {
+  display: grid;
+  gap: 8px;
+}
+
+.dsCheckResult {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  align-items: baseline;
+  padding: 10px 12px;
+  border: 1px solid var(--ds-border);
+  border-radius: 8px;
+  color: var(--ds-muted);
+  font-size: 14px;
+}
+
+.dsCheckResult strong {
+  color: #166534;
+  font-weight: var(--ds-weight-medium);
+}
+
+.dsCheckResult.fail strong {
+  color: #991b1b;
+}
+
+.dsCheckResult small {
+  grid-column: 2;
+  color: #991b1b;
 }
 
 .dsPageTitle {
@@ -237,21 +280,10 @@
   border-bottom: 1px solid var(--ds-border);
 }
 
-.dsCheck {
-  width: 22px;
-  height: 22px;
-  display: inline-grid;
-  place-items: center;
-  border: 1px solid #94a3b8;
-  border-radius: 6px;
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: var(--ds-weight-bold);
-}
-
-.dsCheck.checked {
-  border-color: var(--ds-blue);
-  background: var(--ds-blue);
+.dsCategoryRow input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ds-blue);
 }
 
 .dsDisclosure {
@@ -290,7 +322,8 @@
   }
 
   .dsTypeGrid,
-  .dsControlGrid {
+  .dsControlGrid,
+  .dsChecks {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -320,7 +353,8 @@
   }
 
   .dsTypeGrid,
-  .dsControlGrid {
+  .dsControlGrid,
+  .dsChecks {
     grid-template-columns: 1fr;
   }
 

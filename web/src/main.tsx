@@ -1,13 +1,14 @@
-import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { StrictMode, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { BatchPicker } from "./BatchPicker";
-import { DesignSystemPage } from "./DesignSystemPage";
 import { ReviewCard, SessionHistoryDialog } from "./ReviewSession";
 import { Shell, State } from "./shared";
 import type { Card, Filters, Overview, PracticePreview, ReviewAnswer, ReviewSessionState, View } from "./types";
 import { defaultFilters } from "./types";
 import { addSet, hashOffset, removeSet, toggleSet } from "./utils";
 import "./styles.css";
+
+const DesignSystemPage = lazy(() => import("./dev/DesignSystemPage").then((module) => ({ default: module.DesignSystemPage })));
 
 function App() {
   const [hash, setHash] = useState(location.hash);
@@ -31,7 +32,13 @@ function App() {
     };
   }, []);
 
-  if (hash.startsWith("#design-system")) return <DesignSystemPage />;
+  if (hash.startsWith("#design-system")) {
+    return (
+      <Suspense fallback={<Shell><State title="Loading" body="Preparing design system." /></Shell>}>
+        <DesignSystemPage />
+      </Suspense>
+    );
+  }
 
   return <CramApp />;
 }

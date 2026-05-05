@@ -1,25 +1,48 @@
 .dsFlashGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, var(--ds-phone-width));
   justify-content: center;
   gap: 22px;
   align-items: start;
   max-width: 100%;
+}
+
+.dsDesktopGrid {
+  grid-template-columns: minmax(0, min(920px, 100%));
+  justify-content: center;
+}
+
+.dsPhoneGrid {
+  grid-template-columns: repeat(auto-fit, var(--ds-phone-width));
   overflow-x: auto;
   overflow-y: hidden;
 }
 
 .dsFlashExample {
-  width: var(--ds-phone-width);
   display: grid;
   gap: 10px;
   scroll-snap-align: start;
 }
 
-.dsFlashExampleFull {
+.dsFlashExample.dsPhone {
+  width: var(--ds-phone-width);
+}
+
+.dsFlashExample.dsDesktop {
+  width: 100%;
+  max-width: 920px;
+  min-width: 0;
+}
+
+.dsFlashExampleFull.dsPhone {
   width: var(--ds-phone-width);
   height: var(--ds-phone-height);
   min-height: var(--ds-phone-height);
+}
+
+.dsFlashExampleFull.dsDesktop {
+  width: min(920px, calc(100vw - 56px));
+  height: min(760px, calc(100svh - 40px));
+  min-height: min(760px, calc(100svh - 40px));
 }
 
 .designSystemSingle {
@@ -27,26 +50,24 @@
   min-height: 100svh;
   display: grid;
   justify-items: center;
-  align-content: start;
+  align-content: center;
   padding: 20px;
-  overflow: auto;
+  overflow: hidden;
 }
 
-.dsPhoneSpecimen {
+.dsPhoneSpecimen,
+.dsDesktopSpecimen {
   width: 100%;
   min-height: 100svh;
   background: #ffffff;
 }
 
 .designSystemSingle.dsPhoneSpecimen {
-  justify-items: start;
   padding: 0;
-  overflow: hidden;
 }
 
 .dsReviewSpecimen {
-  width: var(--ds-phone-width);
-  height: var(--ds-phone-height);
+  width: 100%;
   overflow: hidden;
   padding: 20px;
   border: 1px solid var(--ds-border);
@@ -54,9 +75,20 @@
   background: #ffffff;
 }
 
-.dsPhoneSpecimen .dsReviewSpecimen {
+.dsReviewSpecimen.dsDesktop {
+  height: 720px;
+}
+
+.dsReviewSpecimen.dsPhone {
   width: var(--ds-phone-width);
-  height: var(--app-height, 100svh);
+  height: var(--ds-phone-height);
+}
+
+.dsFlashExampleFull .dsReviewSpecimen {
+  height: 100%;
+}
+
+.dsPhoneSpecimen .dsReviewSpecimen {
   border: 0;
   border-radius: 0;
 }
@@ -70,29 +102,29 @@
   padding: 0;
 }
 
-.dsReviewSpecimen .review {
+.dsReviewSpecimen.dsPhone .review {
   --review-controls-height: 96px;
   gap: 10px;
 }
 
-.dsReviewSpecimen .reviewTop,
-.dsReviewSpecimen .sessionPanel {
+.dsReviewSpecimen.dsPhone .reviewTop,
+.dsReviewSpecimen.dsPhone .sessionPanel {
   justify-self: center;
   width: min(353px, 100%);
 }
 
-.dsReviewSpecimen .reviewTop {
+.dsReviewSpecimen.dsPhone .reviewTop {
   grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "cards meta audio";
   gap: 8px;
   font-size: 12px;
 }
 
-.dsReviewSpecimen .reviewTop > button:first-child {
+.dsReviewSpecimen.dsPhone .reviewTop > button:first-child {
   grid-area: cards;
 }
 
-.dsReviewSpecimen .reviewTop > span {
+.dsReviewSpecimen.dsPhone .reviewTop > span {
   grid-area: meta;
   grid-column: auto;
   grid-row: auto;
@@ -100,7 +132,7 @@
   white-space: nowrap;
 }
 
-.dsReviewSpecimen .reviewTop > .audioButton {
+.dsReviewSpecimen.dsPhone .reviewTop > .audioButton {
   grid-area: audio;
   min-width: 54px;
   min-height: 36px;
@@ -108,40 +140,40 @@
   gap: 4px;
 }
 
-.dsReviewSpecimen .reviewTop button {
+.dsReviewSpecimen.dsPhone .reviewTop button {
   min-height: 36px;
   padding: 0 10px;
   font-size: 13px;
 }
 
-.dsReviewSpecimen .desktopMeta,
-.dsReviewSpecimen .wideLabel,
-.dsReviewSpecimen .review kbd,
-.dsReviewSpecimen .reviewTop .repeatButton {
+.dsReviewSpecimen.dsPhone .desktopMeta,
+.dsReviewSpecimen.dsPhone .wideLabel,
+.dsReviewSpecimen.dsPhone .review kbd,
+.dsReviewSpecimen.dsPhone .reviewTop .repeatButton {
   display: none;
 }
 
-.dsReviewSpecimen .mobileMeta,
-.dsReviewSpecimen .narrowLabel {
+.dsReviewSpecimen.dsPhone .mobileMeta,
+.dsReviewSpecimen.dsPhone .narrowLabel {
   display: inline;
 }
 
-.dsReviewSpecimen .studyStack {
+.dsReviewSpecimen.dsPhone .studyStack {
   grid-template-rows: minmax(0, 1fr) 160px;
   gap: clamp(14px, 2.4vh, 22px);
 }
 
-.dsReviewSpecimen .targetWord {
+.dsReviewSpecimen.dsPhone .targetWord {
   font-size: clamp(56px, 17vw, 78px);
   font-weight: 700;
   overflow-wrap: normal;
 }
 
-.dsReviewSpecimen .targetWordPinyin {
+.dsReviewSpecimen.dsPhone .targetWordPinyin {
   font-size: clamp(18px, 4vw, 24px);
 }
 
-.dsReviewSpecimen .sentence {
+.dsReviewSpecimen.dsPhone .sentence {
   width: min(353px, 100%);
   min-height: 72px;
   font-size: clamp(25px, 8.6vw, 36px);
@@ -150,46 +182,46 @@
   overflow-wrap: normal;
 }
 
-.dsReviewSpecimen .sentencePinyinLine,
-.dsReviewSpecimen .answer,
-.dsReviewSpecimen .answer.prompt,
-.dsReviewSpecimen .controls {
+.dsReviewSpecimen.dsPhone .sentencePinyinLine,
+.dsReviewSpecimen.dsPhone .answer,
+.dsReviewSpecimen.dsPhone .answer.prompt,
+.dsReviewSpecimen.dsPhone .controls {
   width: min(353px, 100%);
 }
 
-.dsReviewSpecimen .answer,
-.dsReviewSpecimen .answer.prompt {
+.dsReviewSpecimen.dsPhone .answer,
+.dsReviewSpecimen.dsPhone .answer.prompt {
   justify-self: center;
   min-height: 160px;
   max-height: 160px;
 }
 
-.dsReviewSpecimen .controls {
+.dsReviewSpecimen.dsPhone .controls {
   gap: 8px;
 }
 
-.dsReviewSpecimen .controlsTwo,
-.dsReviewSpecimen .controlsReveal {
+.dsReviewSpecimen.dsPhone .controlsTwo,
+.dsReviewSpecimen.dsPhone .controlsReveal {
   grid-template-columns: 1fr;
 }
 
-.dsReviewSpecimen .controlsReveal {
+.dsReviewSpecimen.dsPhone .controlsReveal {
   display: grid;
 }
 
-.dsReviewSpecimen .revealButton {
+.dsReviewSpecimen.dsPhone .revealButton {
   width: 100%;
 }
 
-.dsReviewSpecimen .meaning {
+.dsReviewSpecimen.dsPhone .meaning {
   font-size: clamp(22px, 6vw, 28px);
 }
 
-.dsReviewSpecimen .sentenceMeaning {
+.dsReviewSpecimen.dsPhone .sentenceMeaning {
   font-size: 15px;
 }
 
-.dsReviewSpecimen .sessionPanel {
+.dsReviewSpecimen.dsPhone .sessionPanel {
   grid-template-columns: minmax(96px, 1fr) auto auto auto;
   justify-content: stretch;
   min-height: 44px;
@@ -198,7 +230,7 @@
   font-size: 13px;
 }
 
-.dsReviewSpecimen .lastReviewPill {
+.dsReviewSpecimen.dsPhone .lastReviewPill {
   justify-self: center;
   max-width: 74px;
   padding: 3px 6px;
@@ -206,11 +238,11 @@
   background: #f8fafc;
 }
 
-.dsReviewSpecimen .lastReviewPill em:first-child {
+.dsReviewSpecimen.dsPhone .lastReviewPill em:first-child {
   display: none;
 }
 
-.dsReviewSpecimen .sessionAction {
+.dsReviewSpecimen.dsPhone .sessionAction {
   min-height: 28px;
   border: 0;
   background: transparent;

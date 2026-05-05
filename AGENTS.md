@@ -239,7 +239,11 @@ Config resolution:
 - For UI-only debugging, start with `XUEZH_SKIP_AUDIO_BACKFILL=1 ./scripts/run-cram-local.sh` so review work cannot accidentally kick off TTS.
 - The web server sets no-store headers for app assets; if the in-app browser looks stale, force reload before judging the UI.
 - Design-system route: `http://127.0.0.1:8765/#design-system`. It must include type roles, controls, learning bars, flashcard before/after/long states, and history.
+- Design-system implementation belongs under `web/src/dev/` and must be lazy-loaded from the hash route. Do not import dev/design-system CSS from `web/src/styles.css` or production app components.
 - The design system must render the same production React components used by the app for important surfaces, especially the review card. Do not create fake duplicate flashcard markup/CSS that can drift from production.
+- The design-system page has in-browser regression checks. They should pass before handoff; if they fail, fix the component/CSS instead of explaining the failure away.
+- Generic design-system single-card routes such as `#design-system-long-answer` must test desktop-responsive layout. Phone-only routes must say `phone` in the hash, e.g. `#design-system-phone-long-answer`.
+- Phone-only CSS overrides in the design system must be scoped to phone specimen classes. Desktop specimens should use the normal production component layout.
 - Active review rounds are server-owned. The browser may cache UI-only state, but the authoritative current card, remaining queue, retry queue, reveal state, and reviewed history live in `cram_review_sessions`. Do not reintroduce `sessionStorage` as the source of truth for review progress.
 - Review answers must be ACID: score row, review event, and review-session queue update happen together, or none of them happen. Undo must restore both the previous score row and the previous session queue snapshot.
 - Mobile QA matters. Check at about iPhone width (`393x852` is fine): no horizontal overflow, no truncated action labels, pinyin only after reveal, source headers sticky in the review-picker list, and visible rows not bleeding through sticky headers.

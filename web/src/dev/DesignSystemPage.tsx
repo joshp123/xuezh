@@ -1,6 +1,8 @@
-import { useRef, type RefObject } from "react";
-import { ReviewCard } from "./ReviewSession";
-import type { Card, ReviewAnswer, ReviewedCard } from "./types";
+import { useEffect, useRef, useState, type RefObject } from "react";
+import { ReviewCard } from "../ReviewSession";
+import type { Card, ReviewAnswer, ReviewedCard } from "../types";
+import "./design-system.css";
+import "./design-system-review.css";
 
 const scores = [
   { className: "dsScoreNone", width: 10 },
@@ -65,10 +67,11 @@ const reviewed = [
 
 export function DesignSystemPage() {
   const hash = window.location.hash;
+  const checks = useDesignSystemChecks(hash);
   const full = fullSpecimen(hash);
   if (full) {
     return (
-      <main className="designSystem designSystemSingle dsPhoneSpecimen">
+      <main className={`designSystem designSystemSingle ds${titleCase(full.device)}Specimen`}>
         <ReviewSpecimen {...full} fullSize />
       </main>
     );
@@ -84,6 +87,22 @@ export function DesignSystemPage() {
           <span>Minimal components for card picking and sentence review.</span>
         </div>
       </header>
+
+      <section className="dsSection dsChecks">
+        <div>
+          <h2>Regression checks</h2>
+          <p className="dsSectionNote">These run in-browser against the production review components below. They catch clipped controls, horizontal overflow, and prompt movement between reveal states.</p>
+        </div>
+        <div className="dsCheckList">
+          {checks.map((check) => (
+            <span className={check.pass ? "dsCheckResult pass" : "dsCheckResult fail"} key={check.name}>
+              <strong>{check.pass ? "Pass" : "Fail"}</strong>
+              {check.name}
+              {check.detail && <small>{check.detail}</small>}
+            </span>
+          ))}
+        </div>
+      </section>
 
       <section className="dsSection">
         <h2>Type roles</h2>
@@ -105,7 +124,7 @@ export function DesignSystemPage() {
           <button className="dsButton">Cards</button>
           <button className="dsTextButton">Show sentence pinyin</button>
           <label className="dsToggle"><input type="checkbox" defaultChecked /> Not learned</label>
-          <label className="dsToggle"><input type="checkbox" defaultChecked /> Due today</label>
+          <label className="dsToggle"><input type="checkbox" defaultChecked /> Due for review</label>
           <label className="dsToggle"><input type="checkbox" /> Got wrong before</label>
         </div>
       </section>
@@ -132,12 +151,19 @@ export function DesignSystemPage() {
 
       <section className="dsSection">
         <h2>Flashcard states</h2>
-        <p className="dsSectionNote">These are real review cards in a fixed 393 x 852 phone frame. If this differs from the app, the design system is wrong.</p>
-        <div className="dsFlashGrid">
-          <ReviewSpecimen label="Before reveal" card={normalCard} revealed={false} href="#design-system-before" />
-          <ReviewSpecimen label="After reveal" card={normalCard} revealed href="#design-system-after" />
-          <ReviewSpecimen label="Long sentence" card={longSentenceCard} revealed href="#design-system-long" />
-          <ReviewSpecimen label="Long answer" card={longAnswerCard} revealed href="#design-system-long-answer" />
+        <p className="dsSectionNote">These are the production review card in desktop and phone frames. If either frame differs from the app, the design system is wrong.</p>
+        <h3 className="dsSubhead">Desktop</h3>
+        <div className="dsFlashGrid dsDesktopGrid">
+          <ReviewSpecimen label="Before reveal" card={normalCard} revealed={false} device="desktop" href="#design-system-before" />
+          <ReviewSpecimen label="After reveal" card={normalCard} revealed device="desktop" href="#design-system-after" />
+          <ReviewSpecimen label="Long answer" card={longAnswerCard} revealed device="desktop" href="#design-system-long-answer" />
+        </div>
+        <h3 className="dsSubhead">Phone, 393 x 852</h3>
+        <div className="dsFlashGrid dsPhoneGrid">
+          <ReviewSpecimen label="Before reveal" card={normalCard} revealed={false} device="phone" href="#design-system-phone-before" />
+          <ReviewSpecimen label="After reveal" card={normalCard} revealed device="phone" href="#design-system-phone-after" />
+          <ReviewSpecimen label="Long sentence" card={longSentenceCard} revealed device="phone" href="#design-system-phone-long" />
+          <ReviewSpecimen label="Long answer" card={longAnswerCard} revealed device="phone" href="#design-system-phone-long-answer" />
         </div>
       </section>
 
@@ -155,27 +181,73 @@ export function DesignSystemPage() {
 }
 
 function fullSpecimen(hash: string) {
-  if (hash === "#design-system-before") return { label: "Before reveal", card: normalCard, revealed: false };
-  if (hash === "#design-system-after") return { label: "After reveal", card: normalCard, revealed: true };
-  if (hash === "#design-system-long") return { label: "Long sentence", card: longSentenceCard, revealed: true };
-  if (hash === "#design-system-long-answer") return { label: "Long answer", card: longAnswerCard, revealed: true };
+  if (hash === "#design-system-before") return { label: "Before reveal", card: normalCard, revealed: false, device: "desktop" as const };
+  if (hash === "#design-system-after") return { label: "After reveal", card: normalCard, revealed: true, device: "desktop" as const };
+  if (hash === "#design-system-long") return { label: "Long sentence", card: longSentenceCard, revealed: true, device: "desktop" as const };
+  if (hash === "#design-system-long-answer") return { label: "Long answer", card: longAnswerCard, revealed: true, device: "desktop" as const };
+  if (hash === "#design-system-phone-before") return { label: "Before reveal", card: normalCard, revealed: false, device: "phone" as const };
+  if (hash === "#design-system-phone-after") return { label: "After reveal", card: normalCard, revealed: true, device: "phone" as const };
+  if (hash === "#design-system-phone-long") return { label: "Long sentence", card: longSentenceCard, revealed: true, device: "phone" as const };
+  if (hash === "#design-system-phone-long-answer") return { label: "Long answer", card: longAnswerCard, revealed: true, device: "phone" as const };
   return null;
 }
 
-function ReviewSpecimen(props: { label: string; card: Card; revealed: boolean; href?: string; fullSize?: boolean }) {
+type DesignCheck = { name: string; pass: boolean; detail?: string };
+
+function useDesignSystemChecks(hash: string) {
+  const [checks, setChecks] = useState<DesignCheck[]>([]);
+
+  useEffect(() => {
+    if (hash !== "" && hash !== "#design-system") return;
+    let cancelled = false;
+
+    function measure() {
+      const frames = [...document.querySelectorAll<HTMLElement>(".dsReviewSpecimen")];
+      const phoneFrames = [...document.querySelectorAll<HTMLElement>(".dsReviewSpecimen.dsPhone")];
+      const overflowing = frames.filter((frame) => frame.scrollWidth > frame.clientWidth + 1 || frame.scrollHeight > frame.clientHeight + 1);
+      const clippedControls = phoneFrames.flatMap((frame) => [...frame.querySelectorAll<HTMLElement>("button, .sessionPanel")])
+        .filter((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
+      const before = document.querySelector<HTMLElement>('[data-ds-device="phone"][data-ds-state="before-reveal"] .sentence');
+      const after = document.querySelector<HTMLElement>('[data-ds-device="phone"][data-ds-state="after-reveal"] .sentence');
+      const promptDelta = before && after ? Math.abs(before.getBoundingClientRect().top - after.getBoundingClientRect().top) : 0;
+
+      const next = [
+        { name: "No review-frame overflow", pass: overflowing.length === 0, detail: overflowing.length ? `${overflowing.length} frame(s)` : undefined },
+        { name: "Phone controls do not wrap or clip", pass: clippedControls.length === 0, detail: clippedControls.length ? `${clippedControls.length} control(s)` : undefined },
+        { name: "Prompt stays stable after reveal", pass: promptDelta <= 2, detail: promptDelta > 2 ? `${Math.round(promptDelta)}px movement` : undefined }
+      ];
+
+      if (!cancelled) setChecks(next);
+    }
+
+    const raf = window.requestAnimationFrame(measure);
+    window.addEventListener("resize", measure);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(raf);
+      window.removeEventListener("resize", measure);
+    };
+  }, [hash]);
+
+  return checks;
+}
+
+function ReviewSpecimen(props: { label: string; card: Card; revealed: boolean; device?: "desktop" | "phone"; href?: string; fullSize?: boolean }) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const device = props.device ?? "phone";
+  const state = props.label.toLowerCase().replaceAll(" ", "-");
   return (
-    <article className={props.fullSize ? "dsFlashExample dsFlashExampleFull" : "dsFlashExample"}>
+    <article className={`${props.fullSize ? "dsFlashExample dsFlashExampleFull" : "dsFlashExample"} ds${titleCase(device)}`} data-ds-device={device} data-ds-state={state}>
       {!props.fullSize && (
         <div className="dsStateHeader">
           <div>
             <div className="dsStateLabel">{props.label}</div>
-            <span>393 x 852 CSS px</span>
+            <span>{device === "phone" ? "393 x 852 CSS px" : "desktop frame"}</span>
           </div>
           {props.href && <a className="dsTextButton" href={props.href}>Open full-size</a>}
         </div>
       )}
-      <div className="dsReviewSpecimen">
+      <div className={`dsReviewSpecimen ds${titleCase(device)}`}>
         <ReviewCard
           card={props.card}
           revealed={props.revealed}
@@ -198,6 +270,10 @@ function ReviewSpecimen(props: { label: string; card: Card; revealed: boolean; h
   );
 }
 
+function titleCase(value: "desktop" | "phone") {
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
 function LearningBar() {
   return (
     <span className="dsLearningBar" aria-label="Learning progress">
@@ -209,7 +285,7 @@ function LearningBar() {
 function CategoryRow(props: { name: string; learned: string; selected?: boolean }) {
   return (
     <div className="dsCategoryRow">
-      <span className={props.selected ? "dsCheck checked" : "dsCheck"}>{props.selected ? "✓" : ""}</span>
+      <input type="checkbox" checked={props.selected ?? false} readOnly aria-label={`Select ${props.name}`} />
       <button className="dsDisclosure">▸</button>
       <strong>{props.name}</strong>
       <div>
