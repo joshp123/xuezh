@@ -1,6 +1,6 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { State } from "./shared";
-import type { Filters, Overview, PracticeCard, PracticePreview, PracticeSource, ScoreBuckets } from "./types";
+import type { Filters, OfflineSaveState, Overview, PracticeCard, PracticePreview, PracticeSource, ScoreBuckets } from "./types";
 import { capOptions, defaultFilters } from "./types";
 import { categoryKey, cleanCategoryName, groupCardsByCategory, learnedText, reviewText, scoreSegments, scoreText } from "./utils";
 
@@ -25,12 +25,16 @@ export function BatchPicker(props: {
   onStart: () => void;
   activeReview: boolean;
   onResume: () => void;
-  offlineStatus: string;
   offlineBusy: boolean;
+  offlineSyncing: boolean;
   offlineMode: boolean;
+  offlineSaveState: OfflineSaveState | null;
+  offlineError: string | null;
   pendingOfflineCount: number;
   onPrepareOffline: () => void;
+  onSyncOffline: () => void | Promise<void>;
 }) {
+  const [offlineOpen, setOfflineOpen] = useState(false);
   const preview = props.preview;
   const cardsByCategory = useMemo(() => groupCardsByCategory(preview?.cards ?? []), [preview]);
   const overviewSources = props.overview.sources ?? [];
@@ -42,13 +46,14 @@ export function BatchPicker(props: {
   return (
     <section className="batch">
       <header className="batchHeader">
-        <div className="screenHeader split"><h1>What to review</h1></div>
-        <PracticeFilters filters={props.filters} onChange={props.onFilters} />
-        <div className="offlineTools">
-          <span>{props.offlineMode ? "Using offline deck" : props.offlineStatus}</span>
-          {props.pendingOfflineCount > 0 && <span>{props.pendingOfflineCount} answer{props.pendingOfflineCount === 1 ? "" : "s"} waiting to sync</span>}
-          <button type="button" onClick={props.onPrepareOffline} disabled={props.offlineBusy}>{props.offlineBusy ? "Saving…" : "Save for offline"}</button>
+        <div className="screenHeader split batchTitle">
+          <h1>What to review</h1>
+          <button className="offlineButton" type="button" onClick={() => setOfflineOpen(true)}>
+            Offline
+            {props.pendingOfflineCount > 0 && <span>{props.pendingOfflineCount}</span>}
+          </button>
         </div>
+        <PracticeFilters filters={props.filters} onChange={props.onFilters} />
       </header>
       <div className="categoryList">
         {!preview && <State title="Loading" body="Finding review cards." />}
@@ -115,8 +120,99 @@ export function BatchPicker(props: {
         <button className="primary" disabled={props.batchSize === 0} onClick={props.onStart}>Start review</button>
       </footer>
       {props.error && <div className="errorText">{props.error}</div>}
+      {offlineOpen && (
+        <OfflineSheet
+          state={props.offlineSaveState}
+          error={props.offlineError}
+          pendingCount={props.pendingOfflineCount}
+          activeReview={props.activeReview}
+          offlineMode={props.offlineMode}
+          busy={props.offlineBusy}
+          syncing={props.offlineSyncing}
+          onClose={() => setOfflineOpen(false)}
+          onPrepare={props.onPrepareOffline}
+          onSync={props.onSyncOffline}
+        />
+      )}
     </section>
   );
+}
+
+function OfflineSheet(props: {
+  state: OfflineSaveState | null;
+  error: string | null;
+  pendingCount: number;
+  activeReview: boolean;
+  offlineMode: boolean;
+  busy: boolean;
+  syncing: boolean;
+  onClose: () => void;
+  onPrepare: () => void;
+  onSync: () => void | Promise<void>;
+}) {
+  const state = props.state;
+  return (
+    <div className="offlineOverlay" role="presentation" onClick={props.onClose}>
+      <section className="offlineSheet" role="dialog" aria-modal="true" aria-labelledby="offline-title" onClick={(event) => event.stopPropagation()}>
+        <header className="offlineSheetHeader">
+          <div>
+            <h2 id="offline-title">Offline</h2>
+            <p>{props.offlineMode ? "Using the saved deck on this device." : state ? "Full deck is saved on this device." : "Save the full deck and audio for travel."}</p>
+          </div>
+          <button type="button" onClick={props.onClose}>Close</button>
+        </header>
+        <dl className="offlineFacts">
+          <div><dt>Cards</dt><dd>{state ? `${state.card_count} saved` : "Not saved yet"}</dd></div>
+          <div><dt>Audio</dt><dd>{audioSavedText(state)}</dd></div>
+          <div><dt>Storage</dt><dd>{storageText(state)}</dd></div>
+          <div><dt>Answers</dt><dd>{props.pendingCount === 0 ? "Synced" : `${props.pendingCount} waiting`}</dd></div>
+        </dl>
+        {state && <p className="offlineHint">Last saved {relativeSavedAt(state.saved_at)}. Answers sync when this device is online and no review is active.</p>}
+        {props.activeReview && props.pendingCount > 0 && <p className="offlineHint">Finish this review before syncing so Undo stays safe.</p>}
+        {props.error && <p className="offlineError">Sync problem: {props.error}</p>}
+        <div className="offlineActions">
+          <button type="button" className="primary" onClick={props.onPrepare} disabled={props.busy}>
+            {props.busy ? "Saving…" : state ? "Refresh offline copy" : "Save offline"}
+          </button>
+          <button type="button" onClick={() => { void props.onSync(); }} disabled={props.syncing || props.pendingCount === 0 || props.activeReview}>
+            {props.syncing ? "Syncing…" : "Sync now"}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function audioSavedText(state: OfflineSaveState | null) {
+  if (!state) return "Not saved yet";
+  if (state.audio_total === 0) return "No audio in deck";
+  if (state.audio_missing === 0) return `${state.audio_saved}/${state.audio_total} saved`;
+  return `${state.audio_saved}/${state.audio_total} saved, ${state.audio_missing} missing`;
+}
+
+function storageText(state: OfflineSaveState | null) {
+  if (!state) return "Unknown";
+  const storage = state.storage;
+  const persistence = storage.persisted === true ? "Protected by browser" : storage.persisted === false ? "Stored by browser" : "Unknown";
+  if (!storage.usage_bytes || !storage.quota_bytes) return persistence;
+  return `${persistence} · ${formatBytes(storage.usage_bytes)} used`;
+}
+
+function relativeSavedAt(value: string) {
+  const time = Date.parse(value);
+  if (!Number.isFinite(time)) return value;
+  const seconds = Math.max(0, Math.round((Date.now() - time) / 1000));
+  if (seconds < 60) return "just now";
+  const minutes = Math.round(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 48) return `${hours}h ago`;
+  return new Date(value).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function formatBytes(value: number) {
+  if (value < 1024 * 1024) return `${Math.round(value / 1024)} KB`;
+  return `${Math.round(value / (1024 * 1024))} MB`;
 }
 
 function ScoreStrip(props: { buckets: ScoreBuckets; total: number }) {

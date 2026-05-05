@@ -4,6 +4,9 @@ import type {
   OfflineDeckCard,
   OfflineDeckSnapshot,
   OfflineReviewEvent,
+  OfflineSaveProgress,
+  OfflineSaveState,
+  OfflineStorageInfo,
   PracticeCard,
   PracticeCategory,
   PracticePreview,
@@ -18,6 +21,7 @@ import { categoryKey, sourceLabel } from "./utils";
 const dbName = "xuezh-offline-v1";
 const kvStore = "kv";
 const eventStore = "events";
+const appCacheName = "xuezh-app-v1";
 const audioCacheName = "xuezh-audio-v1";
 
 export type OfflineSessionStore = {
@@ -31,27 +35,94 @@ export async function registerOfflineApp() {
   }
 }
 
-export async function saveOfflineDeck(snapshot: OfflineDeckSnapshot, onProgress?: (done: number, total: number) => void, cacheAudio = true) {
+export async function saveOfflineDeck(snapshot: OfflineDeckSnapshot, onProgress?: (progress: OfflineSaveProgress) => void, cacheAudio = true) {
   await putKV("deck", snapshot);
+  await cacheAppShell();
+  const previous = await loadOfflineSaveState();
+  let audioSaved = cacheAudio ? 0 : previous?.audio_saved ?? 0;
+  let audioMissing = cacheAudio ? snapshot.audio_paths.length : previous?.audio_missing ?? snapshot.audio_paths.length;
   if (cacheAudio && "caches" in window) {
     const cache = await caches.open(audioCacheName);
     const total = snapshot.audio_paths.length;
     let done = 0;
+    let saved = 0;
+    let missing = 0;
     for (const path of snapshot.audio_paths) {
+      const request = `/${path}`;
       try {
-        await cache.add(`/${path}`);
+        const cached = await cache.match(request);
+        if (!cached) await cache.add(request);
+        saved++;
       } catch {
         // Missing audio should not block text/card offline use.
+        missing++;
       } finally {
         done++;
-        onProgress?.(done, total);
+        onProgress?.({ done, total, saved, missing });
       }
     }
+    audioSaved = saved;
+    audioMissing = missing;
   }
+  const state: OfflineSaveState = {
+    saved_at: new Date().toISOString(),
+    card_count: snapshot.cards.length,
+    audio_total: snapshot.audio_paths.length,
+    audio_saved: audioSaved,
+    audio_missing: audioMissing,
+    storage: await inspectOfflineStorage(cacheAudio)
+  };
+  await putKV("offline_state", state);
+  return state;
+}
+
+async function cacheAppShell() {
+  if (!("caches" in window)) return;
+  const response = await fetch("/offline/app-shell", { cache: "no-store" });
+  if (!response.ok) throw new Error(await response.text());
+  const body = (await response.json()) as { assets?: string[] };
+  const cache = await caches.open(appCacheName);
+  await Promise.all((body.assets ?? ["/"]).map((asset) => cache.add(asset)));
 }
 
 export async function loadOfflineDeck() {
   return await getKV<OfflineDeckSnapshot>("deck");
+}
+
+export async function loadOfflineSaveState() {
+  return await getKV<OfflineSaveState>("offline_state");
+}
+
+export async function inspectOfflineStorage(requestPersistence = false): Promise<OfflineStorageInfo> {
+  const storage = navigator.storage;
+  let persisted: boolean | null = null;
+  let usage: number | null = null;
+  let quota: number | null = null;
+  if (storage?.persisted) {
+    try {
+      persisted = await storage.persisted();
+    } catch {
+      persisted = null;
+    }
+  }
+  if (requestPersistence && storage?.persist) {
+    try {
+      persisted = await storage.persist();
+    } catch {
+      // Leave the prior persisted value in place.
+    }
+  }
+  if (storage?.estimate) {
+    try {
+      const estimate = await storage.estimate();
+      usage = typeof estimate.usage === "number" ? estimate.usage : null;
+      quota = typeof estimate.quota === "number" ? estimate.quota : null;
+    } catch {
+      usage = null;
+      quota = null;
+    }
+  }
+  return { persisted, usage_bytes: usage, quota_bytes: quota };
 }
 
 export async function saveOfflineSession(session: OfflineSessionStore | null) {

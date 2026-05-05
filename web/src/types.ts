@@ -151,6 +151,28 @@ export type OfflineSyncResult = {
   skipped_event_ids: string[];
 };
 
+export type OfflineStorageInfo = {
+  persisted: boolean | null;
+  usage_bytes: number | null;
+  quota_bytes: number | null;
+};
+
+export type OfflineSaveProgress = {
+  done: number;
+  total: number;
+  saved: number;
+  missing: number;
+};
+
+export type OfflineSaveState = {
+  saved_at: string;
+  card_count: number;
+  audio_total: number;
+  audio_saved: number;
+  audio_missing: number;
+  storage: OfflineStorageInfo;
+};
+
 export const capOptions = [50, 100, 200, 500, 0];
 export const defaultFilters: Filters = {
   score_below: 200,
