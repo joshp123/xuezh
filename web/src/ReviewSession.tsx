@@ -43,8 +43,15 @@ export function ReviewCard(props: {
           <div className={props.revealed && props.card.pinyin ? "targetWordPinyin visible" : "targetWordPinyin"}>{props.card.pinyin || "\u00a0"}</div>
           <div className="targetWord">{props.card.word}</div>
           <div className="sentenceWrap">
-            <div className={showSentencePinyin ? "sentencePinyinLine visible" : "sentencePinyinLine"} aria-hidden={!showSentencePinyin}>{props.card.sentence_pinyin || "\u00a0"}</div>
-            <div className="sentence">{sentenceWithHighlight(props.card.sentence_hanzi, props.card.word)}</div>
+            <div className="sentencePinyinSpace" aria-hidden="true" />
+            <div className="sentenceFrame">
+              <div className="sentence">{sentenceWithHighlight(props.card.sentence_hanzi, props.card.word)}</div>
+              {showSentencePinyin && props.card.sentence_pinyin && (
+                <div className="sentence sentenceRubyOverlay" aria-hidden="true">
+                  {sentencePinyinOverlay(props.card.sentence_hanzi, props.card.word, props.card.sentence_pinyin)}
+                </div>
+              )}
+            </div>
           </div>
         </section>
         {props.audioPath && <audio ref={props.audioRef} src={props.audioPath} preload="auto" />}
@@ -129,4 +136,98 @@ function sentenceWithHighlight(sentence: string, word: string) {
       {remainingAfter}
     </>
   );
+}
+
+function sentencePinyinOverlay(sentence: string, word: string, sentencePinyin: string) {
+  const syllables = sentencePinyin
+    .trim()
+    .split(/\s+/)
+    .flatMap(splitPinyinToken)
+    .filter(Boolean);
+  const chars = Array.from(sentence);
+  const pinyinByChar = pinyinForSentenceChars(chars, syllables);
+  const wordStart = sentence.indexOf(word);
+  const wordIsUnique = wordStart >= 0 && sentence.indexOf(word, wordStart + word.length) < 0;
+  const targetStart = wordIsUnique ? Array.from(sentence.slice(0, wordStart)).length : -1;
+  const targetEnd = targetStart >= 0 ? targetStart + Array.from(word).length : -1;
+  const nodes = [];
+
+  for (let index = 0; index < chars.length; index++) {
+    if (index === targetStart) {
+      const targetNodes = [];
+      for (; index < targetEnd; index++) {
+        targetNodes.push(rubyChar(chars[index], pinyinByChar[index], index));
+      }
+      for (; index < chars.length && !isChineseChar(chars[index]); index++) {
+        targetNodes.push(<span key={`${chars[index]}-${index}`}>{chars[index]}</span>);
+      }
+      nodes.push(<span className="noBreak" key="target-pinyin-run">{targetNodes}</span>);
+      index--;
+      continue;
+    }
+    nodes.push(rubyChar(chars[index], pinyinByChar[index], index));
+  }
+
+  return nodes;
+}
+
+function isChineseChar(value: string) {
+  return /[\u3400-\u9fff]/u.test(value);
+}
+
+function pinyinForSentenceChars(chars: string[], syllables: string[]) {
+  let syllableIndex = 0;
+  return chars.map((char) => {
+    if (!isChineseChar(char)) return "";
+    return syllables[syllableIndex++] ?? "";
+  });
+}
+
+function rubyChar(char: string, pinyin: string, index: number) {
+  if (!isChineseChar(char) || !pinyin) return <span key={`${char}-${index}`}>{char}</span>;
+  return (
+    <ruby key={`${char}-${index}`}>
+      {char}
+      <rt>{pinyin}</rt>
+    </ruby>
+  );
+}
+
+const pinyinInitials = ["zh", "ch", "sh", "b", "p", "m", "f", "d", "t", "n", "l", "g", "k", "h", "j", "q", "x", "r", "z", "c", "s", "y", "w", ""];
+const pinyinFinals = ["a", "o", "e", "ai", "ei", "ao", "ou", "an", "en", "ang", "eng", "ong", "i", "ia", "ie", "iao", "iu", "ian", "in", "iang", "ing", "iong", "u", "ua", "uo", "uai", "ui", "uan", "un", "uang", "ueng", "ue", "v", "ve", "van", "vn", "er"];
+const pinyinSyllables = new Set(pinyinInitials.flatMap((initial) => pinyinFinals.map((final) => `${initial}${final}`)));
+
+function splitPinyinToken(value: string) {
+  const cleaned = value.replace(/[.,!?;:，。！？；：]+$/u, "");
+  return cleaned.split(/['’·-]+/u).flatMap(splitPinyinPart);
+}
+
+function splitPinyinPart(value: string) {
+  const chars = Array.from(value);
+  const plain = chars.map(normalizePinyinChar).join("").toLowerCase();
+  const syllables: string[] = [];
+  let offset = 0;
+
+  while (offset < chars.length) {
+    let matchLength = 0;
+    for (let length = Math.min(6, chars.length - offset); length > 0; length--) {
+      if (pinyinSyllables.has(plain.slice(offset, offset + length))) {
+        matchLength = length;
+        break;
+      }
+    }
+    if (matchLength === 0) {
+      syllables.push(chars.slice(offset).join(""));
+      break;
+    }
+    syllables.push(chars.slice(offset, offset + matchLength).join(""));
+    offset += matchLength;
+  }
+
+  return syllables;
+}
+
+function normalizePinyinChar(value: string) {
+  if ("ǖǘǚǜüǕǗǙǛÜ".includes(value)) return "v";
+  return value.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
 }

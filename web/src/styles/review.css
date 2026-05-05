@@ -89,7 +89,7 @@
   min-width: 0;
   display: grid;
   justify-items: center;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .sentencePinyinToggle {
@@ -104,20 +104,15 @@
   text-underline-offset: 3px;
 }
 
-.sentencePinyinLine {
+.sentencePinyinSpace {
   min-height: 18px;
-  visibility: hidden;
-  color: #64748b;
-  font-size: 15px;
-  font-weight: 600;
-  line-height: 1;
-  text-align: center;
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 
-.sentencePinyinLine.visible {
-  visibility: visible;
+.sentenceFrame {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  width: 100%;
 }
 
 .sentence {
@@ -136,6 +131,34 @@
   border-radius: 6px;
   background: #bfdbfe;
   color: inherit;
+  padding: 0 0.06em;
+}
+
+.sentenceRubyOverlay {
+  position: absolute;
+  inset: 0 auto auto auto;
+  pointer-events: none;
+  user-select: none;
+  color: transparent;
+  z-index: 2;
+  transform: translateY(-0.48em);
+}
+
+.sentenceRubyOverlay ruby {
+  ruby-align: center;
+  ruby-position: over;
+}
+
+.sentenceRubyOverlay rt {
+  color: #64748b;
+  font-size: 0.3em;
+  font-weight: 700;
+  line-height: 1;
+  user-select: none;
+}
+
+.sentenceRubyOverlay .noBreak {
+  border-radius: 6px;
   padding: 0 0.06em;
 }
 
@@ -319,9 +342,8 @@
     overflow-wrap: normal;
   }
 
-  .sentencePinyinLine {
-    width: min(353px, calc(100vw - 40px));
-    font-size: 13px;
+  .sentencePinyinSpace {
+    min-height: 18px;
   }
 
   .sentencePinyinToggle {

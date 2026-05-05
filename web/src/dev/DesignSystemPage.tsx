@@ -209,7 +209,7 @@ function useDesignSystemChecks(hash: string) {
         .filter((el) => el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1);
       const before = document.querySelector<HTMLElement>('[data-ds-device="phone"][data-ds-state="before-reveal"] .sentence');
       const after = document.querySelector<HTMLElement>('[data-ds-device="phone"][data-ds-state="after-reveal"] .sentence');
-      const promptDelta = before && after ? Math.abs(before.getBoundingClientRect().top - after.getBoundingClientRect().top) : 0;
+      const promptDelta = before && after ? Math.abs(relativeTopInFrame(before) - relativeTopInFrame(after)) : 0;
 
       const next = [
         { name: "No review-frame overflow", pass: overflowing.length === 0, detail: overflowing.length ? `${overflowing.length} frame(s)` : undefined },
@@ -230,6 +230,11 @@ function useDesignSystemChecks(hash: string) {
   }, [hash]);
 
   return checks;
+}
+
+function relativeTopInFrame(element: HTMLElement) {
+  const frame = element.closest<HTMLElement>(".dsReviewSpecimen");
+  return element.getBoundingClientRect().top - (frame?.getBoundingClientRect().top ?? 0);
 }
 
 function ReviewSpecimen(props: { label: string; card: Card; revealed: boolean; device?: "desktop" | "phone"; href?: string; fullSize?: boolean }) {
