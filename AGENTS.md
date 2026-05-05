@@ -25,14 +25,13 @@ High-signal supporting specs (treat as binding):
 - Skill reference (consumer contract): `skills/chinese-learning-orchestrator/SKILL.md`
 
 Issue tracking:
-- Beads: use `bd` (see `bd --help` / `bd onboard`)
+- No repo-local issue tracker is active. Use the current user request, repo docs, and ExecPlans as the work source.
 
 First steps for a new agent:
-1) `bd ready` → pick a ticket
-2) `bd show <id>` → read acceptance + constraints
-3) `direnv allow` → load `devenv`
-4) `devenv shell` → enter project env
-5) `./scripts/check.sh` → verify baseline
+1) Read the current user request, `README.md`, and `docs/README.md`
+2) `direnv allow` → load `devenv`
+3) `devenv shell` → enter project env
+4) `./scripts/check.sh` → verify baseline
 
 Repo layout (what lives where):
 - `src/xuezh/`: core engine + CLI entry points
@@ -40,15 +39,14 @@ Repo layout (what lives where):
 - `schemas/`: JSON schemas for CLI command outputs
 - `tests/`: unit + contract sync tests
 - `skills/`: LLM skill docs + examples (consumer contract)
-- `tickets/`: implementation tickets (source of work)
+- `tickets/`: historical implementation ticket specs
 - `docs/`: architecture + contract docs + reference material
 
-Working a ticket (minimum steps):
-1) Read `tickets/<id>.md` and confirm North Star + UR mapping
-2) Verify contract impacts against `docs/README.md` authority map
-3) Update tests first (RGR), then code, then docs
-4) Run `./scripts/check.sh`
-5) Update ticket notes and close it
+When using historical ticket specs:
+1) Treat them as context, not the active issue tracker.
+2) Verify contract impacts against `docs/README.md` authority map.
+3) Update tests first (RGR), then code, then docs.
+4) Run `./scripts/check.sh`.
 
 ## North stars (must be referenced in every ticket)
 
@@ -207,7 +205,6 @@ The contract tests will fail if any of these drift.
 4. **PUSH TO REMOTE** - This is MANDATORY:
    ```bash
    git pull --rebase
-   bd sync
    git push
    git status  # MUST show "up to date with origin"
    ```
@@ -233,6 +230,9 @@ Config resolution:
 ## Cram app operating notes
 
 - Local runner: `scripts/run-cram-local.sh`; default URL is `http://127.0.0.1:8765/`.
+- Phone/Tailscale URL on this Mac: `https://josh-mbp.tailb7ad2a.ts.net/xuezh`. The bare root `https://josh-mbp.tailb7ad2a.ts.net/` is not xuezh; it currently proxies another local service on `127.0.0.1:8390`.
+- If the phone shows a blank page, check the serving chain before touching UI code: `lsof -nP -iTCP:8765 -sTCP:LISTEN`, `/Applications/Tailscale.app/Contents/MacOS/Tailscale serve status`, `curl -I https://josh-mbp.tailb7ad2a.ts.net/xuezh`, `curl -I https://josh-mbp.tailb7ad2a.ts.net/assets/<current bundle>.js`, `curl -I https://josh-mbp.tailb7ad2a.ts.net/manifest.webmanifest`, `curl -I https://josh-mbp.tailb7ad2a.ts.net/sw.js`, and `curl -I https://josh-mbp.tailb7ad2a.ts.net/offline/app-shell`.
+- Tailscale must route these xuezh paths to the local server: `/xuezh`, `/api`, `/assets`, `/artifacts`, `/offline`, `/manifest.webmanifest`, `/sw.js`, and `/icon.svg`. Missing manifest/service-worker paths break saved iPhone/PWA launches and offline refresh.
 - Canonical content comes from the shared HelloChinese/Pleco text source plus Travel Survival text. Pleco backup content is only for matching score/recency metadata, not for replacing card text.
 - Audio generation is fill-missing by default. Existing voice files are reused when the DB path exists and the file is present. Do not regenerate/replace audio unless Josh explicitly asks; replacement requires `XUEZH_AUDIO_REPLACE=1` / `--replace`.
 - The calibrated default voices/rates are in `scripts/run-cram-local.sh`: Xiaoxiao `-23%`, Xiaoyi `-15%`, Yunxi `-15%`, Yunyang `-25%`.
@@ -264,4 +264,5 @@ Config resolution:
 - Screenshots must use the actual target CSS viewport, not a cropped desktop viewport. If using headless Chrome, drive DevTools `Emulation.setDeviceMetricsOverride` to `393x852`; `--window-size=393,852` alone can still lay out at 500px and hide mobile regressions.
 - Reject the UI if screenshots show wrapped header/footer controls, controls covering text, clipped text, text hidden behind mobile browser chrome, horizontal overflow, unstable prompt position between reveal states, or production and design-system components disagreeing.
 - Do not split Chinese prompt text into one span per character. It breaks copy/paste by inserting line breaks between every Hanzi. Keep sentence text as normal text nodes except the highlighted target span.
+- Sentence pinyin must remain an overlay/detail, not the primary prompt text. For wrapped sentences, verify every pinyin syllable sits above its Hanzi on each line; second-line pinyin must not collide with the next Hanzi row or the blue target highlight.
 - Do grading/session smoke tests in a throwaway workspace, not Josh's real `~/.local/share/xuezh/cram-local` DB. Use `XUEZH_WORKSPACE_DIR=/private/tmp/xuezh-cram-smoke-...` and import with `--audio none`; start the local web server on a spare port and verify start → reveal → incorrect → reload active session → correct → undo. Only use the real DB for read-only UI screenshots unless Josh explicitly asks to mutate it.

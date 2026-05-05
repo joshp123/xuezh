@@ -108,6 +108,10 @@
   min-height: 18px;
 }
 
+.sentenceWrapPinyin .sentencePinyinSpace {
+  min-height: 8px;
+}
+
 .sentenceFrame {
   position: relative;
   display: grid;
@@ -120,50 +124,56 @@
   width: calc(100% - 32px);
   text-align: center;
   font-size: clamp(34px, 6.4vw, 64px);
-  line-height: 1;
+  line-height: 1.08;
   word-break: normal;
   overflow-wrap: anywhere;
   line-break: strict;
   white-space: normal;
 }
 
-.sentence mark {
+.sentenceWrapPinyin .sentence {
+  line-height: 1.1;
+}
+
+.noBreak {
+  white-space: nowrap;
+}
+
+.sentence mark,
+.targetPinyinChar .pinyinHanzi {
   border-radius: 6px;
   background: #bfdbfe;
   color: inherit;
   padding: 0 0.06em;
 }
 
-.sentenceRubyOverlay {
-  position: absolute;
-  inset: 0 auto auto auto;
-  pointer-events: none;
-  user-select: none;
-  color: transparent;
-  z-index: 2;
-  transform: translateY(-0.48em);
+.sentenceWithPinyin {
+  overflow-wrap: normal;
 }
 
-.sentenceRubyOverlay ruby {
-  ruby-align: center;
-  ruby-position: over;
+.pinyinChar {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  width: 1em;
+  max-width: 1em;
+  vertical-align: bottom;
+  line-height: 1;
 }
 
-.sentenceRubyOverlay rt {
+.pinyinSyllable {
+  width: 3.4em;
   color: #64748b;
-  font-size: 0.3em;
+  font-size: 0.28em;
   font-weight: 700;
   line-height: 1;
+  text-align: center;
   user-select: none;
 }
 
-.sentenceRubyOverlay .noBreak {
-  border-radius: 6px;
-  padding: 0 0.06em;
-}
-
-.noBreak {
-  white-space: nowrap;
+.pinyinHanzi {
+  display: block;
+  line-height: 1;
 }
 
 .reviewTop .audioButton,
@@ -344,6 +354,14 @@
 
   .sentencePinyinSpace {
     min-height: 18px;
+  }
+
+  .sentenceWrapPinyin .sentencePinyinSpace {
+    min-height: 8px;
+  }
+
+  .sentenceWrapPinyin .sentence {
+    line-height: 1.1;
   }
 
   .sentencePinyinToggle {

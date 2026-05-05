@@ -27,14 +27,14 @@ const normalCard = card({
 
 const longSentenceCard = card({
   item_id: "ds-long",
-  category: "Catching a Flight",
-  learning_order: 613,
-  word: "极了",
-  pinyin: "jíle",
-  meaning: "extremely",
-  sentence_hanzi: "我觉得坐飞机方便极了。",
-  sentence_pinyin: "wǒ juéde zuò fēijī fāngbiàn jíle",
-  sentence_meaning: "I think taking a plane is extremely convenient."
+  category: "Going Abroad",
+  learning_order: 604,
+  word: "就",
+  pinyin: "jiù",
+  meaning: "as soon as; right after",
+  sentence_hanzi: "我到了中国就跟你联系。",
+  sentence_pinyin: "wǒ dào le zhōng guó jiù gēn nǐ lián xì",
+  sentence_meaning: "I will contact you as soon as I arrive in China."
 });
 
 const longAnswerCard = card({
@@ -269,6 +269,7 @@ function ReviewSpecimen(props: { label: string; card: Card; revealed: boolean; d
           onReveal={() => undefined}
           onGrade={() => undefined}
           audioRef={audioRef as RefObject<HTMLAudioElement | null>}
+          initialSentencePinyinVisible={props.revealed && props.card === longSentenceCard}
         />
       </div>
     </article>

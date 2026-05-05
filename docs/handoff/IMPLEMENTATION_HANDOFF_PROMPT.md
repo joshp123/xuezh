@@ -9,13 +9,10 @@ Implement the `xuezh` learning engine as a **ZFC/Unix-style dumb pipe** used by 
 - The engine stores primary sources, provides bounded reports, and materializes audio artifacts.
 
 ## Required workflow
-1) Convert all files in `tickets/` into Beads tickets (preserve dependencies + explicit order).
-   - Preserve:
-     - dependencies (blocking relationships)
-     - **desired implementation order** (see `tickets/plan.yaml`)
-   - The Beads representation must encode both dependencies and ordering.
+1) Use the current user request, active ExecPlan, and repo docs as the work source.
+   Historical ticket specs in `tickets/` can provide context, but they are not an active issue tracker.
 
-2) Implement tickets **in order** using **RGR (Red-Green-Refactor)**.
+2) For ticket-style work, follow the order in `tickets/plan.yaml` and use **RGR (Red-Green-Refactor)**.
    - Add/enable tests for each acceptance criteria before implementation.
    - Keep tests aligned to `specs/bdd/*.feature` and the testing pyramid (`specs/test-strategy.md`).
 

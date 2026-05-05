@@ -18,9 +18,10 @@ export function ReviewCard(props: {
   onReveal: () => void;
   onGrade: (value: ReviewAnswer) => void;
   audioRef: RefObject<HTMLAudioElement | null>;
+  initialSentencePinyinVisible?: boolean;
 }) {
-  const [showSentencePinyin, setShowSentencePinyin] = useState(false);
-  useEffect(() => setShowSentencePinyin(false), [props.card.item_id]);
+  const [showSentencePinyin, setShowSentencePinyin] = useState(Boolean(props.initialSentencePinyinVisible));
+  useEffect(() => setShowSentencePinyin(Boolean(props.initialSentencePinyinVisible)), [props.card.item_id, props.initialSentencePinyinVisible]);
   const fullMeta = `${sourceLabel(props.card.source)} · ${cleanCategoryName(props.card.category)} · Card ${props.card.learning_order}`;
   const compactMeta = `${cleanCategoryName(props.card.category)} · ${props.card.learning_order}`;
 
@@ -42,15 +43,14 @@ export function ReviewCard(props: {
         <section className="target">
           <div className={props.revealed && props.card.pinyin ? "targetWordPinyin visible" : "targetWordPinyin"}>{props.card.pinyin || "\u00a0"}</div>
           <div className="targetWord">{props.card.word}</div>
-          <div className="sentenceWrap">
+          <div className={showSentencePinyin ? "sentenceWrap sentenceWrapPinyin" : "sentenceWrap"}>
             <div className="sentencePinyinSpace" aria-hidden="true" />
             <div className="sentenceFrame">
-              <div className="sentence">{sentenceWithHighlight(props.card.sentence_hanzi, props.card.word)}</div>
-              {showSentencePinyin && props.card.sentence_pinyin && (
-                <div className="sentence sentenceRubyOverlay" aria-hidden="true">
-                  {sentencePinyinOverlay(props.card.sentence_hanzi, props.card.word, props.card.sentence_pinyin)}
-                </div>
-              )}
+              <div className={showSentencePinyin && props.card.sentence_pinyin ? "sentence sentenceWithPinyin" : "sentence"}>
+                {showSentencePinyin && props.card.sentence_pinyin
+                  ? sentenceWithInlinePinyin(props.card.sentence_hanzi, props.card.word, props.card.sentence_pinyin)
+                  : sentenceWithHighlight(props.card.sentence_hanzi, props.card.word)}
+              </div>
             </div>
           </div>
         </section>
@@ -138,7 +138,7 @@ function sentenceWithHighlight(sentence: string, word: string) {
   );
 }
 
-function sentencePinyinOverlay(sentence: string, word: string, sentencePinyin: string) {
+function sentenceWithInlinePinyin(sentence: string, word: string, sentencePinyin: string) {
   const syllables = sentencePinyin
     .trim()
     .split(/\s+/)
@@ -156,7 +156,7 @@ function sentencePinyinOverlay(sentence: string, word: string, sentencePinyin: s
     if (index === targetStart) {
       const targetNodes = [];
       for (; index < targetEnd; index++) {
-        targetNodes.push(rubyChar(chars[index], pinyinByChar[index], index));
+        targetNodes.push(pinyinChar(chars[index], pinyinByChar[index], index, true));
       }
       for (; index < chars.length && !isChineseChar(chars[index]); index++) {
         targetNodes.push(<span key={`${chars[index]}-${index}`}>{chars[index]}</span>);
@@ -165,7 +165,19 @@ function sentencePinyinOverlay(sentence: string, word: string, sentencePinyin: s
       index--;
       continue;
     }
-    nodes.push(rubyChar(chars[index], pinyinByChar[index], index));
+    if (isChineseChar(chars[index])) {
+      const run = [pinyinChar(chars[index], pinyinByChar[index], index, false)];
+      let nextIndex = index + 1;
+      for (; nextIndex < chars.length && !isChineseChar(chars[nextIndex]); nextIndex++) {
+        run.push(<span key={`${chars[nextIndex]}-${nextIndex}`}>{chars[nextIndex]}</span>);
+      }
+      if (run.length > 1) {
+        nodes.push(<span className="noBreak" key={`pinyin-run-${index}`}>{run}</span>);
+        index = nextIndex - 1;
+        continue;
+      }
+    }
+    nodes.push(pinyinChar(chars[index], pinyinByChar[index], index, false));
   }
 
   return nodes;
@@ -183,13 +195,13 @@ function pinyinForSentenceChars(chars: string[], syllables: string[]) {
   });
 }
 
-function rubyChar(char: string, pinyin: string, index: number) {
-  if (!isChineseChar(char) || !pinyin) return <span key={`${char}-${index}`}>{char}</span>;
+function pinyinChar(char: string, pinyin: string, index: number, target: boolean) {
+  if (!isChineseChar(char)) return <span key={`${char}-${index}`}>{char}</span>;
   return (
-    <ruby key={`${char}-${index}`}>
-      {char}
-      <rt>{pinyin}</rt>
-    </ruby>
+    <span className={target ? "pinyinChar targetPinyinChar" : "pinyinChar"} key={`${char}-${index}`}>
+      <span className="pinyinSyllable" aria-hidden="true">{pinyin || "\u00a0"}</span>
+      <span className="pinyinHanzi">{char}</span>
+    </span>
   );
 }
 

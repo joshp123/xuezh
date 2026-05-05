@@ -214,6 +214,10 @@ func staticHandler() http.Handler {
 		files := http.FileServer(http.Dir(dist))
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			writeNoStore(w)
+			if r.URL.Path == "/xuezh" {
+				http.ServeFile(w, r, filepath.Join(dist, "index.html"))
+				return
+			}
 			files.ServeHTTP(w, r)
 		})
 	}
@@ -230,7 +234,7 @@ func staticHandler() http.Handler {
 
 func offlineAppShellAssets() ([]string, error) {
 	dist := filepath.Join("web", "dist")
-	assets := []string{"/", "/index.html", "/manifest.webmanifest", "/sw.js"}
+	assets := []string{"/", "/xuezh", "/index.html", "/manifest.webmanifest", "/sw.js"}
 	assetDir := filepath.Join(dist, "assets")
 	entries, err := os.ReadDir(assetDir)
 	if err != nil {

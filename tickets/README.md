@@ -7,8 +7,8 @@ Each ticket is a standalone markdown file with YAML frontmatter.
 - Output schemas: `schemas/`
 - BDD specs: `specs/bdd/*.feature` (executable via pytest-bdd)
 
-## Required conversion
-An implementing agent should convert these into Beads tickets, preserving:
+## Execution order
+These files are historical ticket specs. If they are used for context, preserve:
 - dependencies (`depends_on`)
 - blocks (`blocks`)
 - **desired order** (`order`)

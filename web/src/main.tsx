@@ -331,7 +331,9 @@ function CramApp() {
   const playCurrentAudio = useCallback(() => {
     if (!audioRef.current) return;
     audioRef.current.currentTime = 0;
-    void audioRef.current.play();
+    void audioRef.current.play().catch(() => {
+      // Browsers block autoplay until the first user gesture. Replay still works.
+    });
   }, []);
 
   useEffect(() => setAudioIndex(0), [audioChoices]);

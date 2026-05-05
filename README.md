@@ -195,7 +195,7 @@ Notes:
 - `tests/fixtures/` : minimal dataset fixtures
 - `datasets/` : pinned upstream HSK snapshot for local seeding
 - `src/xuezh/` : Python package + CLI skeleton (`xuezh`)
-- `tickets/` : implementation tickets (Beads source of truth)
+- `tickets/` : historical implementation ticket specs
 - `specs/` : user requirements, BDD scenarios, and testing pyramid strategy
 - `skills/chinese-learning-orchestrator/` : the Skill prompt glue (SKILL.md + references)
 - `devenv.nix` : dev environment skeleton (use this; do **not** install via global package managers)
@@ -220,8 +220,9 @@ Override via environment variables:
 
 ## Ticket execution method
 
-Work items live in Beads (not `tickets/`; those were scaffold placeholders).  
-Implement tickets using the **RGR pattern**:
+Use the current user request, active ExecPlan, and repo docs as the work source.
+The `tickets/` directory is historical scaffold context, not an active issue tracker.
+Implement substantial changes using the **RGR pattern**:
 - **Red:** write/enable tests
 - **Green:** minimal implementation to pass tests
 - **Refactor:** clean up without behavior change

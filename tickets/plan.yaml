@@ -22,4 +22,4 @@ desired_order:
   - T-14
 notes:
   - "Order encodes the recommended implementation sequence (even if some tickets could be parallelized)."
-  - "Beads conversion must preserve both dependencies and order."
+  - "If these historical ticket specs are used, preserve both dependencies and order."
