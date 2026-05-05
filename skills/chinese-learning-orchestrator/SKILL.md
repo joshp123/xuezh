@@ -37,13 +37,19 @@ Never ask the engine for “what should I do next” and never invent recommenda
 
 ## Default operating loop (always)
 
-1) Call `xuezh snapshot ...` first.
+1) For Chinese-learning requests, call `xuezh learner state --json` unless you already loaded the same `state_hash` recently in this session. Refresh after reviews or at the start of a new day/session.
 2) Decide a *tiny* plan (1–2 bullets).
 3) Run a short activity (review / speak / story / chat).
 4) Log outcomes (via review grades, pronunciation attempts, and future event logging).
 5) Stop early by default (leave the learner wanting more).
 
+`learner.state` is compact columnar JSON. Read `data.columns` once; every row in `data.cards` follows that order. It contains every canonical cram card, category context, card text, score facts, and history. It intentionally omits pinyin/audio/internal IDs. Do not ask for a topic-filtered state blob. Categories are the topic map.
 
+For N+1 work:
+- Use mostly rows where `learned` is true.
+- Add only a small number of weak/unlearned rows that fit the user's requested situation.
+- Let the user's request and the card categories drive the topic. Do not hardcode default topics in this Skill.
+- Mix reading, listening, and typing by default. Use speaking only when `audio process-voice` is configured and passes a smoke test.
 
 ## Instrumentation discipline (how to keep the DB truthful)
 
@@ -326,7 +332,7 @@ Stop early unless the user explicitly asks for more.
 ## Tool usage patterns
 
 ### /review style
-- snapshot
+- learner state
 - `review start --limit N`
 - one item at a time
 - `review grade ...` after each attempt
@@ -339,7 +345,7 @@ Stop early unless the user explicitly asks for more.
 - give 1–2 fixes, retry once
 
 ### /story style
-- snapshot (to constrain level)
+- learner state (to constrain level)
 - generate story at i+1
 - store via `content cache put`
 - optionally narrate via `audio tts`
@@ -374,6 +380,7 @@ Rule for new words:
 
 ### Snapshot + HSK audit
 ```
+xuezh learner state --json
 xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json
 xuezh report hsk --level 3 --window 30d --max-items 200 --max-bytes 200000 --json
 ```

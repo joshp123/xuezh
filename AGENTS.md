@@ -252,6 +252,7 @@ Config resolution:
 - Active review rounds are server-owned. The browser may cache UI-only state, but the authoritative current card, remaining queue, retry queue, reveal state, and reviewed history live in `cram_review_sessions`. Do not reintroduce `sessionStorage` as the source of truth for review progress.
 - Review answers must be ACID: score row, review event, and review-session queue update happen together, or none of them happen. Undo must restore both the previous score row and the previous session queue snapshot.
 - Offline/PWA mode is whole-deck: cache the app shell, canonical card text, current score rows, active session, pending review events, and existing audio files. Do not limit offline to the current round.
+- LLM learner context is `xuezh learner state --json` / `GET /api/learner/state`. It is columnar JSON: read `columns` once, then each `cards` row follows that order. Keep it full-deck and compact; do not add topic filters, pinyin, audio paths, IDs, or recommendation fields unless Josh explicitly asks.
 - Offline save must refresh the current app shell cache, not rely only on a service-worker install event. This is what keeps app updates from going stale before a flight.
 - Offline save must never regenerate audio. It only caches artifact paths already present in the DB and on disk.
 - Keep offline status in the existing `Offline` sheet/control. Do not add extra picker status rows; the picker is already dense. The sheet should show cards saved, audio saved/missing, browser storage status, pending answers, and manual sync.

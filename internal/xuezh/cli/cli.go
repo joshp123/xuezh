@@ -42,6 +42,8 @@ func Run(args []string) int {
 		return runVersion(args[1:])
 	case "snapshot":
 		return runSnapshot(args[1:])
+	case "learner":
+		return runLearner(args[1:])
 	case "db":
 		return runDB(args[1:])
 	case "dataset":
@@ -104,6 +106,46 @@ func runWebServe(args []string) int {
 		return 1
 	}
 	return 0
+}
+
+func runLearner(args []string) int {
+	if len(args) == 0 {
+		printUsage()
+		return 1
+	}
+	switch args[0] {
+	case "state":
+		return runLearnerState(args[1:])
+	default:
+		printUsage()
+		return 1
+	}
+}
+
+func runLearnerState(args []string) int {
+	fs := flag.NewFlagSet("learner state", flag.ContinueOnError)
+	fs.SetOutput(os.Stderr)
+	_ = fs.Bool("json", true, "Output JSON envelope")
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
+	now, err := clock.NowUTC()
+	if err != nil {
+		return emitError("learner.state", err)
+	}
+	state, err := cram.LearnerStateFor(now)
+	if err != nil {
+		return emitError("learner.state", err)
+	}
+	out := envelope.OK("learner.state", map[string]any{
+		"generated_at":  state.GeneratedAt,
+		"changed_at":    state.ChangedAt,
+		"state_hash":    state.StateHash,
+		"learned_score": state.LearnedScore,
+		"columns":       state.Columns,
+		"cards":         state.Cards,
+	}, nil, false, nil)
+	return emit(out)
 }
 
 func runHelloChinese(args []string) int {
@@ -1541,7 +1583,7 @@ func emitTypedError(command, errorType, message string, details map[string]any) 
 
 func printUsage() {
 	fmt.Fprintln(os.Stderr, "usage: xuezh <command> [args]")
-	fmt.Fprintln(os.Stderr, "commands: version, snapshot, db, dataset, hellochinese, travel, pleco, cram, review, srs, report, event, content, audio, web, doctor, gc")
+	fmt.Fprintln(os.Stderr, "commands: version, snapshot, learner, db, dataset, hellochinese, travel, pleco, cram, review, srs, report, event, content, audio, web, doctor, gc")
 }
 
 var ErrNotImplemented = errors.New("not implemented")

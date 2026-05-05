@@ -17,6 +17,13 @@
       "example_cli": "xuezh snapshot --window 30d --due-limit 80 --evidence-limit 200 --max-bytes 200000 --json"
     },
     {
+      "id": "learner.state",
+      "cli": "xuezh learner state --json",
+      "schema_ok": "schemas/learner.state.schema.json",
+      "ticket": "T-16",
+      "example_cli": "xuezh learner state --json"
+    },
+    {
       "id": "db.init",
       "cli": "xuezh db init --json",
       "schema_ok": "schemas/db.init.schema.json",

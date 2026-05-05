@@ -2,6 +2,7 @@
   "version",
   "gc",
   "db.init",
+  "learner.state",
   "dataset.import",
   "hellochinese.import",
   "hellochinese.audio-backfill",

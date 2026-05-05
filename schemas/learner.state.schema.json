@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "learner.state ok envelope",
+  "type": "object",
+  "required": ["ok", "schema_version", "command", "data", "artifacts", "truncated", "limits"],
+  "properties": {
+    "ok": { "const": true },
+    "schema_version": { "type": "string" },
+    "command": { "const": "learner.state" },
+    "data": {
+      "type": "object",
+      "required": ["generated_at", "changed_at", "state_hash", "learned_score", "columns", "cards"],
+      "properties": {
+        "generated_at": { "type": "string" },
+        "changed_at": { "type": "string" },
+        "state_hash": { "type": "string" },
+        "learned_score": { "type": "integer" },
+        "columns": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "category" },
+            { "const": "hanzi" },
+            { "const": "meaning" },
+            { "const": "sentence" },
+            { "const": "sentence_meaning" },
+            { "const": "score" },
+            { "const": "learned" },
+            { "const": "due" },
+            { "const": "correct" },
+            { "const": "incorrect" },
+            { "const": "reviewed" },
+            { "const": "first_reviewed" },
+            { "const": "last_reviewed" },
+            { "const": "next_due" },
+            { "const": "history" }
+          ],
+          "minItems": 15,
+          "maxItems": 15
+        },
+        "cards": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "minItems": 15,
+            "maxItems": 15
+          }
+        }
+      }
+    },
+    "artifacts": { "type": "array" },
+    "truncated": { "type": "boolean" },
+    "limits": { "type": "object" }
+  },
+  "additionalProperties": true
+}

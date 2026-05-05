@@ -34,6 +34,14 @@ All commands return one of:
 - command id: `snapshot`
 - output schema: `schemas/snapshot.schema.json`
 
+### learner state
+- `xuezh learner state --json`
+- command id: `learner.state`
+- output schema: `schemas/learner.state.schema.json`
+- returns the full canonical cram deck as compact columnar JSON for LLM context; `data.columns` names the fields and every row in `data.cards` follows that order
+- includes canonical card text, category context, live Pleco-style score facts, learned/due booleans, and review history; it intentionally omits pinyin, audio paths, source indices, and recommendations
+- `data.state_hash` changes when visible learner state changes, so callers can cache the payload and reload only when stale
+
 ### db init
 - `xuezh db init --json`
 - command id: `db.init`

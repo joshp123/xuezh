@@ -21,6 +21,12 @@ Feature: HelloChinese cram review
     Then the JSON envelope is ok
     And the command is `cram.overview`
 
+  Scenario: Export compact learner state
+    Given the HelloChinese fixture is imported
+    When I run `xuezh learner state --json`
+    Then the JSON envelope is ok
+    And the command is `learner.state`
+
   Scenario: Grade a cram card
     Given the HelloChinese fixture is imported
     And I have fetched the first cram card

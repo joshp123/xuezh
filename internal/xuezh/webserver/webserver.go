@@ -23,6 +23,7 @@ func Serve(opts ServerOptions) error {
 		port = 8765
 	}
 	mux := http.NewServeMux()
+	mux.HandleFunc("GET /api/learner/state", handleLearnerState)
 	mux.HandleFunc("GET /api/cram/overview", handleOverview)
 	mux.HandleFunc("POST /api/cram/preview", handlePreview)
 	mux.HandleFunc("GET /api/cram/session", handleActiveSession)
@@ -46,6 +47,21 @@ func handleOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, overview)
+}
+
+func handleLearnerState(w http.ResponseWriter, r *http.Request) {
+	state, err := cram.LearnerStateFor(time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	etag := `"` + state.StateHash + `"`
+	w.Header().Set("ETag", etag)
+	if r.Header.Get("If-None-Match") == etag {
+		w.WriteHeader(http.StatusNotModified)
+		return
+	}
+	writeJSON(w, state)
 }
 
 func handlePreview(w http.ResponseWriter, r *http.Request) {

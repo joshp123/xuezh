@@ -235,6 +235,15 @@ type PracticeCard struct {
 	GotWrong       bool    `json:"got_wrong"`
 }
 
+type LearnerState struct {
+	GeneratedAt  string   `json:"generated_at"`
+	ChangedAt    string   `json:"changed_at"`
+	StateHash    string   `json:"state_hash"`
+	LearnedScore int      `json:"learned_score"`
+	Columns      []string `json:"columns"`
+	Cards        [][]any  `json:"cards"`
+}
+
 type SourceSummary struct {
 	Source       string `json:"source"`
 	Label        string `json:"label"`

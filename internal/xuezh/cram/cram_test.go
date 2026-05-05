@@ -236,6 +236,74 @@ func TestHelloChinesePlecoTextImport(t *testing.T) {
 	}
 }
 
+func TestLearnerStateIsCompactAndStable(t *testing.T) {
+	workspace := t.TempDir()
+	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+
+	if _, err := ImportHelloChinese(ImportOptions{Path: "testdata/hellochinese.txt", AudioMode: "none"}); err != nil {
+		t.Fatalf("import hellochinese: %v", err)
+	}
+	now := time.Date(2026, 4, 26, 12, 0, 0, 0, time.UTC)
+	state, err := LearnerStateFor(now)
+	if err != nil {
+		t.Fatalf("learner state: %v", err)
+	}
+	if state.GeneratedAt == "" || state.ChangedAt == "" || state.StateHash == "" || state.LearnedScore != 200 {
+		t.Fatalf("missing state metadata: %+v", state)
+	}
+	if len(state.Cards) != 3 {
+		t.Fatalf("expected three cards, got %d", len(state.Cards))
+	}
+	expectedColumns := []string{"category", "hanzi", "meaning", "sentence", "sentence_meaning", "score", "learned", "due", "correct", "incorrect", "reviewed", "first_reviewed", "last_reviewed", "next_due", "history"}
+	if len(state.Columns) != len(expectedColumns) {
+		t.Fatalf("unexpected columns: %+v", state.Columns)
+	}
+	for i, column := range expectedColumns {
+		if state.Columns[i] != column {
+			t.Fatalf("unexpected column %d: got %q want %q", i, state.Columns[i], column)
+		}
+	}
+	first := state.Cards[0]
+	if len(first) != len(expectedColumns) ||
+		first[0] != "HelloChinese / Hello" ||
+		first[1] != "你" ||
+		first[3] != "你是龙大。" ||
+		first[5] != nil ||
+		first[6] != false {
+		t.Fatalf("unexpected first learner row: %+v", first)
+	}
+	for _, row := range state.Cards {
+		for _, value := range row {
+			if value == "nǐ" || value == "wǒ" || value == "shì" {
+				t.Fatalf("learner state should omit pinyin: %+v", row)
+			}
+		}
+	}
+
+	again, err := LearnerStateFor(now)
+	if err != nil {
+		t.Fatalf("learner state again: %v", err)
+	}
+	if again.StateHash != state.StateHash {
+		t.Fatalf("hash should be stable: first=%s again=%s", state.StateHash, again.StateHash)
+	}
+
+	cards, err := NextCards(NextOptions{Limit: 1}, now)
+	if err != nil {
+		t.Fatalf("next cards: %v", err)
+	}
+	if _, err := GradeCard(GradeOptions{ItemID: cards[0].ItemID, Grade: GradeCorrect, SessionID: "learner"}, now.Add(time.Minute)); err != nil {
+		t.Fatalf("grade card: %v", err)
+	}
+	changed, err := LearnerStateFor(now.Add(2 * time.Minute))
+	if err != nil {
+		t.Fatalf("learner state after grade: %v", err)
+	}
+	if changed.StateHash == state.StateHash || changed.Cards[0][5] == nil || changed.Cards[0][6] != true {
+		t.Fatalf("learner hash and facts should update after review: before=%s after=%+v", state.StateHash, changed.Cards[0])
+	}
+}
+
 func TestImportGeneratesAudioWithCleanSentence(t *testing.T) {
 	workspace := t.TempDir()
 	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
