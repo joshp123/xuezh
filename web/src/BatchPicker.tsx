@@ -25,6 +25,11 @@ export function BatchPicker(props: {
   onStart: () => void;
   activeReview: boolean;
   onResume: () => void;
+  offlineStatus: string;
+  offlineBusy: boolean;
+  offlineMode: boolean;
+  pendingOfflineCount: number;
+  onPrepareOffline: () => void;
 }) {
   const preview = props.preview;
   const cardsByCategory = useMemo(() => groupCardsByCategory(preview?.cards ?? []), [preview]);
@@ -39,6 +44,11 @@ export function BatchPicker(props: {
       <header className="batchHeader">
         <div className="screenHeader split"><h1>What to review</h1></div>
         <PracticeFilters filters={props.filters} onChange={props.onFilters} />
+        <div className="offlineTools">
+          <span>{props.offlineMode ? "Using offline deck" : props.offlineStatus}</span>
+          {props.pendingOfflineCount > 0 && <span>{props.pendingOfflineCount} answer{props.pendingOfflineCount === 1 ? "" : "s"} waiting to sync</span>}
+          <button type="button" onClick={props.onPrepareOffline} disabled={props.offlineBusy}>{props.offlineBusy ? "Saving…" : "Save for offline"}</button>
+        </div>
       </header>
       <div className="categoryList">
         {!preview && <State title="Loading" body="Finding review cards." />}

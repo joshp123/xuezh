@@ -246,6 +246,12 @@ Config resolution:
 - Phone-only CSS overrides in the design system must be scoped to phone specimen classes. Desktop specimens should use the normal production component layout.
 - Active review rounds are server-owned. The browser may cache UI-only state, but the authoritative current card, remaining queue, retry queue, reveal state, and reviewed history live in `cram_review_sessions`. Do not reintroduce `sessionStorage` as the source of truth for review progress.
 - Review answers must be ACID: score row, review event, and review-session queue update happen together, or none of them happen. Undo must restore both the previous score row and the previous session queue snapshot.
+- Offline/PWA mode is whole-deck: cache the app shell, canonical card text, current score rows, active session, pending review events, and existing audio files. Do not limit offline to the current round.
+- Offline save must never regenerate audio. It only caches artifact paths already present in the DB and on disk.
+- Offline review events are append-only and idempotent. Each offline answer needs a stable event id; sync applies pending events in answered-at order and skips ids already present in `review_events`.
+- An active offline review session wins over server state on reload. Do not hide or replace it just because the Mac server is reachable again; continue the active local session until it finishes or is explicitly abandoned.
+- Do not auto-sync while an offline session is still active. Undo is simple before sync and ambiguous after sync; sync when the offline session is no longer active.
+- Offline QA requires a disposable DB proof before handoff: import a tiny fixture with `--audio none`, open the web app, click `Save for offline`, stop the server, reload, start/continue a review offline, answer at least two cards, reload again while still offline, restart the server, and verify the DB has exactly those new events and updated score rows. Re-run sync/reload once more and verify the event count does not increase.
 - Mobile QA matters. Check at about iPhone width (`393x852` is fine): no horizontal overflow, no truncated action labels, pinyin only after reveal, source headers sticky in the review-picker list, and visible rows not bleeding through sticky headers.
 - For any web UI change, run one proactive visual pass before handoff. Build/restart, then capture screenshots for at least:
   - review card before reveal

@@ -77,6 +77,7 @@ type NextOptions struct {
 }
 
 type GradeOptions struct {
+	EventID    string
 	ItemID     string
 	Grade      string
 	SessionID  string
@@ -249,6 +250,59 @@ type CategorySummary struct {
 	TotalCount   int    `json:"total_count"`
 	LearnedCount int    `json:"learned_count"`
 	Eligible     int    `json:"eligible_count"`
+}
+
+type OfflineDeckSnapshot struct {
+	GeneratedAt string                 `json:"generated_at"`
+	Cards       []OfflineDeckCard      `json:"cards"`
+	AudioPaths  []string               `json:"audio_paths"`
+	Settings    OfflineScoringSettings `json:"settings"`
+}
+
+type OfflineDeckCard struct {
+	Card
+	Score           *int    `json:"score"`
+	Difficulty      int     `json:"difficulty"`
+	CorrectCount    int     `json:"correct_count"`
+	IncorrectCount  int     `json:"incorrect_count"`
+	ReviewedCount   int     `json:"reviewed_count"`
+	FirstReviewedAt *string `json:"first_reviewed_at"`
+	LastReviewedAt  *string `json:"last_reviewed_at"`
+}
+
+type OfflineScoringSettings struct {
+	LearnedScore              int  `json:"learned_score"`
+	MinScore                  int  `json:"min_score"`
+	MaxScore                  int  `json:"max_score"`
+	MinDifficulty             int  `json:"min_difficulty"`
+	MaxDifficulty             int  `json:"max_difficulty"`
+	PointsPerDay              int  `json:"points_per_day"`
+	ScoreOncePerDay           bool `json:"score_once_per_day"`
+	IncorrectScore            int  `json:"incorrect_score"`
+	CorrectInitialScore       int  `json:"correct_initial_score"`
+	CorrectMultiplier         int  `json:"correct_multiplier"`
+	CorrectDifficultyChange   int  `json:"correct_difficulty_change"`
+	IncorrectDifficultyChange int  `json:"incorrect_difficulty_change"`
+	DifficultyDivisor         int  `json:"difficulty_divisor"`
+}
+
+type OfflineReviewEvent struct {
+	EventID    string `json:"event_id"`
+	SessionID  string `json:"session_id"`
+	ItemID     string `json:"item_id"`
+	Grade      string `json:"grade"`
+	ShownAt    string `json:"shown_at"`
+	AnsweredAt string `json:"answered_at"`
+	ElapsedMS  int    `json:"elapsed_ms"`
+	Round      int    `json:"round"`
+	WasRetry   bool   `json:"was_retry"`
+}
+
+type OfflineSyncResult struct {
+	Applied         int      `json:"applied"`
+	Skipped         int      `json:"skipped"`
+	AppliedEventIDs []string `json:"applied_event_ids"`
+	SkippedEventIDs []string `json:"skipped_event_ids"`
 }
 
 type itemRow struct {

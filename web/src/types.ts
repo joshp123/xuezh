@@ -100,6 +100,57 @@ export type ReviewSessionState = {
   updated_at: string;
 };
 
+export type OfflineDeckCard = Card & {
+  score: number | null;
+  difficulty: number;
+  correct_count: number;
+  incorrect_count: number;
+  reviewed_count: number;
+  first_reviewed_at: string | null;
+  last_reviewed_at: string | null;
+  due_at: string | null;
+};
+
+export type OfflineDeckSnapshot = {
+  generated_at: string;
+  cards: OfflineDeckCard[];
+  audio_paths: string[];
+  settings: {
+    learned_score: number;
+    min_score: number;
+    max_score: number;
+    min_difficulty: number;
+    max_difficulty: number;
+    points_per_day: number;
+    score_once_per_day: boolean;
+    incorrect_score: number;
+    correct_initial_score: number;
+    correct_multiplier: number;
+    correct_difficulty_change: number;
+    incorrect_difficulty_change: number;
+    difficulty_divisor: number;
+  };
+};
+
+export type OfflineReviewEvent = {
+  event_id: string;
+  session_id: string;
+  item_id: string;
+  grade: ReviewAnswer;
+  shown_at: string;
+  answered_at: string;
+  elapsed_ms: number;
+  round: number;
+  was_retry: boolean;
+};
+
+export type OfflineSyncResult = {
+  applied: number;
+  skipped: number;
+  applied_event_ids: string[];
+  skipped_event_ids: string[];
+};
+
 export const capOptions = [50, 100, 200, 500, 0];
 export const defaultFilters: Filters = {
   score_below: 200,

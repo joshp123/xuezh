@@ -31,6 +31,9 @@ func Serve(opts ServerOptions) error {
 	mux.HandleFunc("POST /api/cram/session/repeat", handleRepeatSession)
 	mux.HandleFunc("POST /api/cram/session/grade", handleSessionGrade)
 	mux.HandleFunc("POST /api/cram/session/undo", handleSessionUndo)
+	mux.HandleFunc("GET /api/cram/offline/deck", handleOfflineDeck)
+	mux.HandleFunc("POST /api/cram/offline/sync", handleOfflineSync)
+	mux.HandleFunc("GET /offline/app-shell", handleOfflineAppShell)
 	mux.HandleFunc("GET /artifacts/", handleArtifact)
 	mux.Handle("/", staticHandler())
 	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), mux)
@@ -161,6 +164,40 @@ func handleSessionUndo(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]any{"session": session, "undo": result})
 }
 
+func handleOfflineDeck(w http.ResponseWriter, r *http.Request) {
+	deck, err := cram.OfflineDeck(time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, deck)
+}
+
+func handleOfflineSync(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Events []cram.OfflineReviewEvent `json:"events"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	result, err := cram.SyncOfflineReviewEvents(req.Events, time.Now().UTC())
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSON(w, result)
+}
+
+func handleOfflineAppShell(w http.ResponseWriter, r *http.Request) {
+	assets, err := offlineAppShellAssets()
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	writeJSON(w, map[string]any{"assets": assets})
+}
+
 func handleArtifact(w http.ResponseWriter, r *http.Request) {
 	rel := strings.TrimPrefix(r.URL.Path, "/")
 	resolved, err := paths.ResolveInWorkspace(rel)
@@ -189,6 +226,26 @@ func staticHandler() http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`<main style="font:16px system-ui;padding:32px;max-width:720px;margin:auto"><h1>xuezh web assets not built</h1><p>Run <code>cd web && pnpm install && pnpm build</code>, then restart <code>xuezh web serve</code>.</p></main>`))
 	})
+}
+
+func offlineAppShellAssets() ([]string, error) {
+	dist := filepath.Join("web", "dist")
+	assets := []string{"/", "/index.html", "/manifest.webmanifest", "/sw.js"}
+	assetDir := filepath.Join(dist, "assets")
+	entries, err := os.ReadDir(assetDir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return assets, nil
+		}
+		return nil, err
+	}
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		assets = append(assets, "/assets/"+entry.Name())
+	}
+	return assets, nil
 }
 
 func writeNoStore(w http.ResponseWriter) {

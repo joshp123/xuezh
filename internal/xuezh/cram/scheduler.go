@@ -120,6 +120,10 @@ func gradeCardTx(tx *sql.Tx, opts GradeOptions, now time.Time) (GradeResult, err
 	if sessionID == "" {
 		sessionID = newID()
 	}
+	eventID := strings.TrimSpace(opts.EventID)
+	if eventID == "" {
+		eventID = newID()
+	}
 	payload := gradePayload{
 		Mode:       "cram",
 		Source:     before.Source,
@@ -139,7 +143,7 @@ func gradeCardTx(tx *sql.Tx, opts GradeOptions, now time.Time) (GradeResult, err
 	nowText := clock.FormatISO(now)
 	if _, err := tx.Exec(
 		"INSERT INTO review_events (id, item_id, event_type, ts, session_id, payload_json) VALUES (?, ?, ?, ?, ?, ?)",
-		newID(), itemID, "cram.grade", nowText, sessionID, string(payloadJSON),
+		eventID, itemID, "cram.grade", nowText, sessionID, string(payloadJSON),
 	); err != nil {
 		return GradeResult{}, err
 	}

@@ -2,8 +2,24 @@ import { StrictMode, Suspense, lazy, useCallback, useEffect, useMemo, useRef, us
 import { createRoot } from "react-dom/client";
 import { BatchPicker } from "./BatchPicker";
 import { ReviewCard, SessionHistoryDialog } from "./ReviewSession";
+import {
+  gradeOfflineSession,
+  loadOfflineDeck,
+  loadOfflineSession,
+  markOfflineEventsSynced,
+  offlineOverview,
+  offlinePracticePreview,
+  pendingOfflineEvents,
+  registerOfflineApp,
+  revealOfflineSession,
+  saveOfflineDeck,
+  startOfflineReviewSession,
+  toggleOfflineRepeat,
+  undoOfflineSession
+} from "./offline";
 import { Shell, State } from "./shared";
-import type { Card, Filters, Overview, PracticePreview, ReviewAnswer, ReviewSessionState, View } from "./types";
+import type { OfflineSessionStore } from "./offline";
+import type { Card, Filters, OfflineDeckSnapshot, OfflineSyncResult, Overview, PracticePreview, ReviewAnswer, ReviewSessionState, View } from "./types";
 import { defaultFilters } from "./types";
 import { addSet, hashOffset, removeSet, toggleSet } from "./utils";
 import "./styles.css";
@@ -58,6 +74,12 @@ function CramApp() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [offlineDeck, setOfflineDeck] = useState<OfflineDeckSnapshot | null>(null);
+  const [offlineStore, setOfflineStore] = useState<OfflineSessionStore | null>(null);
+  const [offlineMode, setOfflineMode] = useState(false);
+  const [offlineStatus, setOfflineStatus] = useState("Offline not saved");
+  const [offlineBusy, setOfflineBusy] = useState(false);
+  const [pendingOfflineCount, setPendingOfflineCount] = useState(0);
   const [audioPath, setAudioPath] = useState<string | null>(null);
   const [audioIndex, setAudioIndex] = useState(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -71,22 +93,69 @@ function CramApp() {
   const shownAt = session?.shown_at ?? null;
   const hasActiveReview = Boolean(session?.status === "active" && card);
 
+  const resumeOfflineStore = useCallback((store: OfflineSessionStore, deck: OfflineDeckSnapshot) => {
+    setOfflineDeck(deck);
+    setOfflineStore(store);
+    setOfflineMode(true);
+    setOverview(offlineOverview(deck));
+    setPreview(offlinePracticePreview(deck, filters));
+    setOfflineStatus("Offline deck ready");
+    setSession(store.session);
+    setView("review");
+  }, [filters]);
+
+  const loadOfflineFallback = useCallback(async () => {
+    const deck = await loadOfflineDeck();
+    if (!deck) return false;
+    const store = await loadOfflineSession();
+    setOfflineDeck(deck);
+    setOfflineStore(store);
+    setOfflineMode(true);
+    setOverview(offlineOverview(deck));
+    setPreview(offlinePracticePreview(deck, filters));
+    setOfflineStatus("Offline deck ready");
+    const pending = await pendingOfflineEvents();
+    setPendingOfflineCount(pending.length);
+    if (store?.session.status === "active" && store.session.card) {
+      resumeOfflineStore(store, deck);
+    }
+    return true;
+  }, [filters, resumeOfflineStore]);
+
+  const loadActiveOfflineStore = useCallback(async () => {
+    const localStore = await loadOfflineSession();
+    const localDeck = await loadOfflineDeck();
+    if (localStore?.session.status === "active" && localStore.session.card && localDeck) {
+      resumeOfflineStore(localStore, localDeck);
+      return true;
+    }
+    return false;
+  }, [resumeOfflineStore]);
+
   const refreshOverview = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
+      if (await loadActiveOfflineStore()) return;
       const response = await fetch("/api/cram/overview");
       if (!response.ok) throw new Error(await response.text());
       setOverview((await response.json()) as Overview);
+      setOfflineMode(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (!(await loadOfflineFallback())) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [loadActiveOfflineStore, loadOfflineFallback]);
 
   const refreshPreview = useCallback(async () => {
     setError(null);
+    if (offlineMode && offlineDeck) {
+      setPreview(offlinePracticePreview(offlineDeck, filters));
+      return;
+    }
     try {
       const response = await fetch("/api/cram/preview", {
         method: "POST",
@@ -96,13 +165,16 @@ function CramApp() {
       if (!response.ok) throw new Error(await response.text());
       setPreview((await response.json()) as PracticePreview);
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (!(await loadOfflineFallback())) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
     }
-  }, [filters]);
+  }, [filters, loadOfflineFallback, offlineDeck, offlineMode]);
 
   const loadActiveSession = useCallback(async () => {
     setError(null);
     try {
+      if (await loadActiveOfflineStore()) return;
       const response = await fetch("/api/cram/session");
       if (!response.ok) throw new Error(await response.text());
       const body = (await response.json()) as { session: ReviewSessionState | null };
@@ -111,14 +183,93 @@ function CramApp() {
         setView("review");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      if (!(await loadOfflineFallback())) {
+        setError(err instanceof Error ? err.message : String(err));
+      }
     } finally {
       setSessionLoaded(true);
     }
-  }, []);
+  }, [loadActiveOfflineStore, loadOfflineFallback]);
+
+  const syncOfflineAnswers = useCallback(async () => {
+    const events = await pendingOfflineEvents();
+    setPendingOfflineCount(events.length);
+    if (!navigator.onLine) return;
+    const localStore = offlineStore ?? await loadOfflineSession();
+    if (localStore?.session.status === "active" && localStore.session.card) {
+      if (events.length > 0) setOfflineStatus(`${events.length} answer${events.length === 1 ? "" : "s"} waiting to sync`);
+      return;
+    }
+    if (events.length === 0) return;
+    setOfflineStatus(`Syncing ${events.length} answer${events.length === 1 ? "" : "s"}`);
+    const response = await fetch("/api/cram/offline/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ events })
+    });
+    if (!response.ok) throw new Error(await response.text());
+    const result = (await response.json()) as OfflineSyncResult;
+    await markOfflineEventsSynced([...result.applied_event_ids, ...result.skipped_event_ids]);
+    setPendingOfflineCount(0);
+    const deckResponse = await fetch("/api/cram/offline/deck");
+    if (deckResponse.ok) {
+      const deck = (await deckResponse.json()) as OfflineDeckSnapshot;
+      await saveOfflineDeck(deck, undefined, false);
+      setOfflineDeck(deck);
+      if (offlineMode) {
+        setOverview(offlineOverview(deck));
+        setPreview(offlinePracticePreview(deck, filters));
+      }
+    }
+    setOfflineStatus("Offline deck ready");
+  }, [filters, offlineMode, offlineStore]);
+
+  const prepareOffline = useCallback(async () => {
+    setOfflineBusy(true);
+    setOfflineStatus("Saving deck");
+    setError(null);
+    try {
+      await registerOfflineApp();
+      const response = await fetch("/api/cram/offline/deck");
+      if (!response.ok) throw new Error(await response.text());
+      const deck = (await response.json()) as OfflineDeckSnapshot;
+      await saveOfflineDeck(deck, (done, total) => {
+        if (total > 0) setOfflineStatus(`Saving audio ${done}/${total}`);
+      });
+      setOfflineDeck(deck);
+      setOfflineStatus("Offline deck ready");
+      setPreview(offlinePracticePreview(deck, filters));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setOfflineStatus("Offline save failed");
+    } finally {
+      setOfflineBusy(false);
+    }
+  }, [filters]);
 
   useEffect(() => { void refreshOverview(); }, [refreshOverview]);
   useEffect(() => { void loadActiveSession(); }, [loadActiveSession]);
+  useEffect(() => {
+    void registerOfflineApp().catch(() => undefined);
+    void loadOfflineDeck().then((deck) => {
+      if (deck) {
+        setOfflineDeck(deck);
+        setOfflineStatus("Offline deck ready");
+      }
+    });
+    void pendingOfflineEvents().then((events) => setPendingOfflineCount(events.length));
+  }, []);
+  useEffect(() => {
+    const onOnline = () => { void syncOfflineAnswers().catch((err) => setError(err instanceof Error ? err.message : String(err))); };
+    window.addEventListener("online", onOnline);
+    void syncOfflineAnswers().catch(() => undefined);
+    return () => window.removeEventListener("online", onOnline);
+  }, [syncOfflineAnswers]);
+  useEffect(() => {
+    if (offlineMode && offlineStore?.session.status !== "active") {
+      void syncOfflineAnswers().catch((err) => setError(err instanceof Error ? err.message : String(err)));
+    }
+  }, [offlineMode, offlineStore?.session.status, syncOfflineAnswers]);
   useEffect(() => { if (view === "batch") void refreshPreview(); }, [refreshPreview, view]);
   useEffect(() => {
     if (!preview) return;
@@ -161,9 +312,14 @@ function CramApp() {
     if (next.status === "active" && next.card) setView("review");
     else {
       setView("done");
-      void refreshOverview();
+      if (offlineMode && offlineDeck) {
+        setOverview(offlineOverview(offlineDeck));
+        setPreview(offlinePracticePreview(offlineDeck, filters));
+      } else {
+        void refreshOverview();
+      }
     }
-  }, [refreshOverview]);
+  }, [filters, offlineDeck, offlineMode, refreshOverview]);
 
   const openBatch = () => setView("batch");
   const resumeReview = () => { if (hasActiveReview) setView("review"); };
@@ -172,6 +328,12 @@ function CramApp() {
     setLoading(true);
     setError(null);
     try {
+      if (offlineMode && offlineDeck) {
+        const store = await startOfflineReviewSession(selectedCards.map((item) => item.item_id), offlineDeck, batchLimit);
+        setOfflineStore(store);
+        applySession(store.session);
+        return;
+      }
       const response = await fetch("/api/cram/session/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -185,12 +347,18 @@ function CramApp() {
     } finally {
       setLoading(false);
     }
-  }, [applySession, batchLimit, selectedCards]);
+  }, [applySession, batchLimit, offlineDeck, offlineMode, selectedCards]);
 
   const reveal = useCallback(async () => {
     if (!session || revealed) return;
     setError(null);
     try {
+      if (offlineMode && offlineStore) {
+        const store = await revealOfflineSession(offlineStore);
+        setOfflineStore(store);
+        setSession(store.session);
+        return;
+      }
       const response = await fetch("/api/cram/session/reveal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -202,12 +370,18 @@ function CramApp() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [revealed, session]);
+  }, [offlineMode, offlineStore, revealed, session]);
 
   const toggleRepeat = useCallback(async () => {
     if (!session) return;
     setError(null);
     try {
+      if (offlineMode && offlineStore) {
+        const store = await toggleOfflineRepeat(offlineStore);
+        setOfflineStore(store);
+        setSession(store.session);
+        return;
+      }
       const response = await fetch("/api/cram/session/repeat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,12 +393,24 @@ function CramApp() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [session]);
+  }, [offlineMode, offlineStore, session]);
 
   const undoLastGrade = useCallback(async () => {
     if (!session || reviewedCards.length === 0) return;
     setError(null);
     try {
+      if (offlineMode && offlineStore) {
+        const { store, snapshot } = await undoOfflineSession(offlineStore);
+        setOfflineStore(store);
+        setSession(store.session);
+        if (snapshot) {
+          setOfflineDeck(snapshot);
+          setPreview(offlinePracticePreview(snapshot, filters));
+        }
+        const events = await pendingOfflineEvents();
+        setPendingOfflineCount(events.length);
+        return;
+      }
       const response = await fetch("/api/cram/session/undo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -236,7 +422,7 @@ function CramApp() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [applySession, reviewedCards.length, session]);
+  }, [applySession, filters, offlineMode, offlineStore, reviewedCards.length, session]);
 
   const grade = useCallback(async (value: ReviewAnswer) => {
     if (!session || !card || !revealed) return;
@@ -244,6 +430,16 @@ function CramApp() {
     const elapsedMs = shownAt ? Date.parse(answeredAt) - Date.parse(shownAt) : 0;
     setError(null);
     try {
+      if (offlineMode && offlineStore && offlineDeck) {
+        const { store, snapshot } = await gradeOfflineSession(offlineStore, offlineDeck, value);
+        setOfflineStore(store);
+        setOfflineDeck(snapshot);
+        setPreview(offlinePracticePreview(snapshot, filters));
+        applySession(store.session);
+        const events = await pendingOfflineEvents();
+        setPendingOfflineCount(events.length);
+        return;
+      }
       const response = await fetch("/api/cram/session/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -255,7 +451,7 @@ function CramApp() {
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
-  }, [applySession, card, revealed, session, shownAt]);
+  }, [applySession, card, filters, offlineDeck, offlineMode, offlineStore, revealed, session, shownAt]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -298,6 +494,11 @@ function CramApp() {
           onStart={startBatch}
           activeReview={hasActiveReview}
           onResume={resumeReview}
+          offlineStatus={offlineStatus}
+          offlineBusy={offlineBusy}
+          offlineMode={offlineMode}
+          pendingOfflineCount={pendingOfflineCount}
+          onPrepareOffline={prepareOffline}
         />
       )}
       {view === "review" && card && (

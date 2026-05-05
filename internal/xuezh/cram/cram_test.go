@@ -414,6 +414,89 @@ func TestPlecoScoreImportPartiallySeedsMismatchedCategory(t *testing.T) {
 	}
 }
 
+func TestOfflineDeckAndIdempotentSync(t *testing.T) {
+	workspace := t.TempDir()
+	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	if _, err := ImportTravelSurvival(ImportOptions{
+		Path:      "testdata/travel.txt",
+		AudioMode: "sentence",
+		Voices:    []string{"zh-CN-XiaoyiNeural"},
+		AudioGenerator: func(text, voice, rate, outPath string) (string, error) {
+			fullPath := filepath.Join(workspace, outPath)
+			if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
+				return "", err
+			}
+			if err := os.WriteFile(fullPath, []byte("ogg"), 0o644); err != nil {
+				return "", err
+			}
+			return outPath, nil
+		},
+	}); err != nil {
+		t.Fatalf("import travel: %v", err)
+	}
+	now := time.Date(2026, 4, 26, 12, 0, 0, 0, time.UTC)
+	deck, err := OfflineDeck(now)
+	if err != nil {
+		t.Fatalf("offline deck: %v", err)
+	}
+	if len(deck.Cards) != 2 || len(deck.AudioPaths) != 2 || deck.Settings.LearnedScore != 200 || deck.Settings.PointsPerDay != 100 {
+		t.Fatalf("unexpected offline deck: %+v", deck)
+	}
+
+	events := []OfflineReviewEvent{
+		{
+			EventID:    "offline-2",
+			SessionID:  "offline-session",
+			ItemID:     deck.Cards[1].ItemID,
+			Grade:      GradeCorrect,
+			AnsweredAt: "2026-04-27T12:00:00Z",
+			Round:      1,
+		},
+		{
+			EventID:    "offline-1",
+			SessionID:  "offline-session",
+			ItemID:     deck.Cards[0].ItemID,
+			Grade:      GradeIncorrect,
+			AnsweredAt: "2026-04-26T12:00:00Z",
+			Round:      1,
+		},
+	}
+	result, err := SyncOfflineReviewEvents(events, now)
+	if err != nil {
+		t.Fatalf("sync offline events: %v", err)
+	}
+	if result.Applied != 2 || result.Skipped != 0 {
+		t.Fatalf("unexpected first sync result: %+v", result)
+	}
+	again, err := SyncOfflineReviewEvents(events, now)
+	if err != nil {
+		t.Fatalf("sync duplicate offline events: %v", err)
+	}
+	if again.Applied != 0 || again.Skipped != 2 {
+		t.Fatalf("duplicate sync should be idempotent: %+v", again)
+	}
+
+	conn, err := sql.Open("sqlite3", filepath.Join(workspace, "db.sqlite3"))
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	defer conn.Close()
+	var eventsStored int
+	if err := conn.QueryRow("SELECT COUNT(*) FROM review_events WHERE session_id = ?", "offline-session").Scan(&eventsStored); err != nil {
+		t.Fatalf("count offline events: %v", err)
+	}
+	if eventsStored != 2 {
+		t.Fatalf("expected exactly two stored offline events, got %d", eventsStored)
+	}
+	refreshed, err := OfflineDeck(now)
+	if err != nil {
+		t.Fatalf("refreshed offline deck: %v", err)
+	}
+	if refreshed.Cards[0].IncorrectCount != 1 || refreshed.Cards[1].CorrectCount != 1 || refreshed.Cards[1].Score == nil || *refreshed.Cards[1].Score != 600 {
+		t.Fatalf("offline sync should update live score rows once: %+v", refreshed.Cards)
+	}
+}
+
 func createPlecoScoreFixture(t *testing.T, path string) {
 	t.Helper()
 	conn, err := sql.Open("sqlite3", path)
