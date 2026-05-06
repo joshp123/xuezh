@@ -34,10 +34,10 @@
 
     # Load Azure Speech creds from nix-secrets (agenix) without touching global nixos-config
     if command -v agenix >/dev/null 2>&1; then
-      if [[ -f "$HOME/code/nix-secrets/xuezh-azure-speech-key.age" ]]; then
+      if [[ -f "$HOME/code/nix/nix-secrets/xuezh-azure-speech-key.age" ]]; then
         mkdir -p .devenv/state
         export XUEZH_AZURE_SPEECH_KEY_FILE="$PWD/.devenv/state/xuezh-azure-speech-key"
-        (cd "$HOME/code/nix-secrets" && RULES=./secrets.nix agenix -d xuezh-azure-speech-key.age) > "$XUEZH_AZURE_SPEECH_KEY_FILE"
+        (cd "$HOME/code/nix/nix-secrets" && RULES=./secrets.nix agenix -d xuezh-azure-speech-key.age) > "$XUEZH_AZURE_SPEECH_KEY_FILE"
         chmod 600 "$XUEZH_AZURE_SPEECH_KEY_FILE"
       fi
     fi
