@@ -58,9 +58,8 @@ Your job is to turn user interactions into **facts**:
 
 - Reviews: call `review grade` for each reviewed item.
 - Speaking: use `audio process-voice` and store the returned artifacts.
-- Exposure: after you serve any new content (story, dialogue, exercise, chat snippet), log:
-  - `event_type=content_served` (content ID, modality)
-  - `event_type=exposure` for the items actually shown/heard (bounded list)
+- Exposure: after you serve any new content (story, dialogue, exercise, chat snippet), log `content_served` with the content ID and modality.
+- Log item-level `exposure` only when the tool call you used returned item IDs. `learner.state` deliberately omits internal IDs, so do not fabricate `--items` values from learner-state rows.
 
 Guidelines:
 - Prefer **word-level items** (chunks) over isolated characters.
