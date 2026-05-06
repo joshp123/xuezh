@@ -20,7 +20,7 @@
             src = ./.;
             subPackages = [ "cmd/xuezh-go" ];
 
-            vendorHash = "sha256-Z5jP92AGNnieIsJamMmoWa09BYWQH9KGGiBm31hBoiY=";
+            vendorHash = "sha256-d8CP13/L/0pLuaCGIeJzaLdSxMQGo8CoASYAsnx0GAk=";
 
             buildInputs = [ pkgs.sqlite ];
 
