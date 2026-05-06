@@ -227,6 +227,12 @@ Environment knobs (set via plugin `config.env`):
 Config resolution:
 - Default path: `~/.config/xuezh/config.toml` (or `$XDG_CONFIG_HOME/xuezh/config.toml`)
 
+## OpenTofu ownership
+
+- Provider-side xuezh cloud resources belong in `/Users/josh/code/opentofu-infra/services/xuezh`.
+- Current pre-migration source root: `infra/azure/speech`.
+- Runtime service config stays in `/Users/josh/code/nix/nixos-config`; secret values stay in `/Users/josh/code/nix/nix-secrets`.
+
 ## Cram app operating notes
 
 - Local runner: `scripts/run-cram-local.sh`; default URL is `http://127.0.0.1:8765/`.

@@ -20,12 +20,16 @@ This plan does not destroy anything and does not move state until Josh approves 
 - [x] (2026-05-06T15:20Z) Wrote this infra centralization ExecPlan for alignment.
 - [x] (2026-05-06T15:45Z) Aligned with Josh on the working repo name `opentofu-infra`, no `stacks/` directory, and top-level categories `shared`, `websites`, `services`, `retired`, and `modules`.
 - [x] (2026-05-06T15:45Z) Aligned that `shared/dns` owns zones/delegation, website folders own site-specific records where possible, Google shared resources live under `shared/google`, and service-specific Google resources live under `services/gog` and `services/goplaces`.
+- [x] (2026-05-06T16:25Z) Created the local central repo skeleton at `/Users/josh/code/opentofu-infra` with `shared`, `websites`, `services`, `retired`, `modules`, AGENTS ownership docs, inventory docs, state notes, and decommission report drafts.
+- [x] (2026-05-06T16:25Z) Built read-only inventory reports for websites, services, shared provider resources, and retired systems without running apply/destroy/import or moving state.
+- [x] (2026-05-06T16:25Z) Produced Task Rally and OpenClaw Cloud executive decommission report drafts and explicitly stopped short of any destructive action.
+- [x] (2026-05-06T16:25Z) Added app-side AGENTS cross-references in clean repos `xuezh` and `djtbot`.
+- [x] (2026-05-06T16:25Z) Recorded stop lines for dirty `website` and `openclaw-cloud` repos so this work does not overwrite unrelated agent/user changes.
 - [ ] Align with Josh on state backend strategy.
-- [ ] Create or choose the central OpenTofu repo.
-- [ ] Build read-only inventory reports for websites, services, shared provider resources, and retired systems.
+- [x] Create or choose the central OpenTofu repo.
 - [ ] Migrate `jjpcodes.com` OpenTofu into the central repo with a no-drift plan.
 - [ ] Move xuezh Azure Speech OpenTofu scaffold into the central repo after the repo shape is proven.
-- [ ] Produce Task Rally and OpenClaw Cloud destroy reports, then stop for approval.
+- [x] Produce Task Rally and OpenClaw Cloud destroy reports, then stop for approval.
 - [ ] Update global and affected AGENTS docs on both sides so future agents know where OpenTofu belongs and where the related app/content lives.
 
 ## Surprises & Discoveries
