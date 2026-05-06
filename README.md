@@ -142,7 +142,7 @@ Azure notes:
 - Quick setup:
   1) Create an Azure Speech resource (region `westeurope` is fine).
   2) Grab the key + region from the Azure portal.
-  3) Put the key in your config file (`[azure.speech] key_file = ...`) and set `region`.
+  3) Put the key in your config file (`[azure.speech] key_file = ...`) and set `region`, or export `XUEZH_AZURE_SPEECH_KEY_FILE` + `XUEZH_AZURE_SPEECH_REGION`.
   4) Run `xuezh audio process-voice --in /path/to/audio.m4a --ref-text "你好" --json`.
 - Free tier includes 5 audio hours/month for Speech to Text and 0.5M Neural TTS characters/month.
 - Pronunciation Assessment is billed at the baseline Speech to Text rate; prosody/grammar/vocabulary/topic are add-on charges.

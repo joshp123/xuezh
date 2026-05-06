@@ -234,13 +234,20 @@ func azureCredentials() (string, string, error) {
 	if region == "" {
 		region = strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_REGION"))
 	}
+	if region == "" {
+		if regionFile := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_REGION_FILE")); regionFile != "" {
+			if data, err := os.ReadFile(expandHomePath(regionFile)); err == nil {
+				region = strings.TrimSpace(string(data))
+			}
+		}
+	}
 	if key == "" || region == "" {
 		missing := []string{}
 		if key == "" {
 			missing = append(missing, "XUEZH_AZURE_SPEECH_KEY_FILE or config.azure.speech.key/key_file")
 		}
 		if region == "" {
-			missing = append(missing, "XUEZH_AZURE_SPEECH_REGION or config.azure.speech.region")
+			missing = append(missing, "XUEZH_AZURE_SPEECH_REGION, XUEZH_AZURE_SPEECH_REGION_FILE, or config.azure.speech.region")
 		}
 		return "", "", AzureSpeechError{
 			Kind:    "auth",

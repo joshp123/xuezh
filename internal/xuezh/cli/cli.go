@@ -1381,24 +1381,42 @@ func runDoctor(args []string) int {
 	if strings.TrimSpace(configKey) != "" {
 		configKeyPresent = true
 	}
-	envKeyPresent := os.Getenv("AZURE_SPEECH_KEY") != ""
-	envRegionPresent := os.Getenv("AZURE_SPEECH_REGION") != ""
+	envKeyFile := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_KEY_FILE"))
+	envRegion := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_REGION"))
+	envRegionFile := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_REGION_FILE"))
+	envKeyFilePresent := readableNonEmptyFile(envKeyFile)
+	envRegionPresent := envRegion != "" || readableNonEmptyFile(envRegionFile)
 	configRegionPresent := strings.TrimSpace(configRegion) != ""
 	configPath, _ := config.ConfigPath()
 	checks = append(checks, map[string]any{
 		"name": "azure.speech.env",
-		"ok":   (envKeyPresent || configKeyPresent) && (envRegionPresent || configRegionPresent),
+		"ok":   (envKeyFilePresent || configKeyPresent) && (envRegionPresent || configRegionPresent),
 		"details": map[string]any{
-			"AZURE_SPEECH_KEY":    envKeyPresent,
-			"AZURE_SPEECH_REGION": envRegionPresent,
-			"config_key":          configKeyPresent,
-			"config_region":       configRegionPresent,
-			"config_path":         configPath,
+			"XUEZH_AZURE_SPEECH_KEY_FILE":    envKeyFilePresent,
+			"XUEZH_AZURE_SPEECH_REGION":      envRegion != "",
+			"XUEZH_AZURE_SPEECH_REGION_FILE": envRegionFile != "" && readableNonEmptyFile(envRegionFile),
+			"config_key":                     configKeyPresent,
+			"config_region":                  configRegionPresent,
+			"config_path":                    configPath,
 		},
 	})
 
 	out := envelope.OK("doctor", map[string]any{"checks": checks}, nil, false, nil)
 	return emit(out)
+}
+
+func readableNonEmptyFile(path string) bool {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return false
+	}
+	if strings.HasPrefix(path, "~") {
+		if home, err := os.UserHomeDir(); err == nil {
+			path = filepath.Join(home, strings.TrimPrefix(path, "~/"))
+		}
+	}
+	data, err := os.ReadFile(path)
+	return err == nil && strings.TrimSpace(string(data)) != ""
 }
 
 func runGC(args []string) int {
