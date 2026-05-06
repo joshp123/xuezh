@@ -1,4 +1,4 @@
-# Make Xuezh Whole-Deck Offline on iPhone
+# Centralize OpenTofu Infrastructure and Retire Stale Product Stacks
 
 This ExecPlan is a living document. The sections `Progress`, `Surprises & Discoveries`, `Decision Log`, and `Outcomes & Retrospective` must be kept up to date as work proceeds.
 
@@ -6,207 +6,321 @@ This repository has `.agent/PLANS.md`; maintain this document according to that 
 
 ## Purpose / Big Picture
 
-After this change, Josh can install the local xuezh web app as an iPhone Home Screen app, press one explicit control to make the whole cram deck available offline, get on a plane with no internet, choose cards from the offline copy, review sentences with audio, reload or reopen the app, and safely resume. When the phone is online again, xuezh sends the offline answers back to the Mac server and applies them to the real SQLite score state exactly once.
+After this work, Josh has one obvious place for cloud resources managed with OpenTofu. AWS, Azure, Hetzner, GCP, DNS, and similar cloud/provider resources live in a single repo with a tree that explains itself. Application repos keep application code, content, and deploy scripts. Nix repos keep machine/runtime/service configuration. Secrets stay in the secrets repo. Agents can discover this without guessing because the global AGENTS preamble and affected repo AGENTS files point to the same source of truth.
 
-The current app already has the right server-side truth: `internal/xuezh/cram` owns canonical cards, Pleco-style scoring, due dates, review sessions, undo, and event logging. The missing boundary is an offline boundary. Today the browser must call `/api/cram/...` for every meaningful action. That leaks network availability into the review loop and makes a plane session impossible. This plan adds one deep boundary: a whole-deck offline snapshot plus an append-only answer event log. The phone may cache and replay a temporary view of the deck, but Go remains the scoring authority when events sync.
+The first practical migration is `jjpcodes.com` infrastructure, because it is active OpenTofu work and belongs in the central OpenTofu repo. Task Rally and OpenClaw Cloud are retired or superseded product stacks; they must be inventoried and reported before any destroy happens. Azure Speech for xuezh can become the first new resource in the central repo once the repo shape is agreed, but it should not force a bad ontology.
+
+This plan does not destroy anything and does not move state until Josh approves the inventory and migration gates. It creates the operating model, inventories existing OpenTofu roots, migrates active website infrastructure first, and produces explicit decommission reports for retired stacks.
 
 ## Progress
 
-- [x] (2026-05-05T10:38:03Z) Inspected the current session, scoring, query, webserver, and React review paths.
-- [x] (2026-05-05T10:38:03Z) Confirmed the repo tree is clean before starting.
-- [x] (2026-05-05T10:38:03Z) Wrote this ExecPlan.
-- [x] (2026-05-05T20:18Z) Add server offline deck export and idempotent offline event sync.
-- [x] (2026-05-05T20:18Z) Add PWA manifest and service worker for app-shell and audio caching.
-- [x] (2026-05-05T20:18Z) Add browser IndexedDB storage for the offline deck, active offline session, and pending events.
-- [x] (2026-05-05T20:18Z) Wire offline status, whole-deck download, offline session creation, offline grading, and foreground sync into the existing React app.
-- [x] (2026-05-05T20:31Z) Added Go coverage for offline deck export, ordered event sync, duplicate-event skip, and live score updates.
-- [x] (2026-05-05T20:44Z) Ran a clean throwaway browser smoke: saved the deck offline, stopped the server, reviewed two cards offline, reloaded offline, restarted the server, synced, and verified exactly two `review_events`.
-- [x] (2026-05-05T12:09Z) Ran an active-offline-session smoke with the server returning mid-session; verified no sync happens until the local session finishes, then all queued events apply once.
-- [x] (2026-05-05T12:09Z) Ran visual regression checks at 393px phone width and desktop width; fixed picker horizontal overflow and confirmed `scrollWidth == clientWidth`.
-- [x] (2026-05-05T12:09Z) Ran `devenv shell -- ./scripts/check.sh` and `devenv shell -- sh -lc 'cd web && pnpm build'`.
-- [x] (2026-05-05T12:14Z) Reviewed for simplicity, removed unnecessary drift risk, updated operating docs, and prepared one clean slice for commit.
+- [x] (2026-05-06T15:20Z) Inspected current known OpenTofu roots across `/Users/josh/code`, including `website`, `taskrally/apps/cloud`, `openclaw-cloud`, `xuezh`, `nix/nixos-config`, and several smaller repos.
+- [x] (2026-05-06T15:20Z) Confirmed `xuezh` worktree was clean before writing this plan.
+- [x] (2026-05-06T15:20Z) Moved the completed whole-deck offline ExecPlan to `.agent/done/whole-deck-offline.md`.
+- [x] (2026-05-06T15:20Z) Wrote this infra centralization ExecPlan for alignment.
+- [ ] Align with Josh on repo name, top-level ontology, and state backend.
+- [ ] Create or choose the central OpenTofu repo.
+- [ ] Build read-only inventory reports for active, candidate, and retired stacks.
+- [ ] Migrate `jjpcodes.com` OpenTofu into the central repo with a no-drift plan.
+- [ ] Move xuezh Azure Speech OpenTofu scaffold into the central repo after the repo shape is proven.
+- [ ] Produce Task Rally and OpenClaw Cloud destroy reports, then stop for approval.
+- [ ] Update global and affected AGENTS docs so future agents know where OpenTofu belongs.
 
 ## Surprises & Discoveries
 
-- Observation: The local cram workspace is small enough for whole-deck offline.
-  Evidence: A prior probe in this thread showed `/Users/josh/.local/share/xuezh/cram-local` is about 87M, with audio artifacts about 85M and roughly 10,000 audio files.
+- Observation: `website` currently owns public site content and also some OpenTofu roots.
+  Evidence: `website/AGENTS.md` describes `sites/gallery`, `sites/jjpcodes-blog`, and `sites/jjpcodes-home`; `website/infra/tofu/jjpcodes-blog` and `website/infra/tofu/eastwindlegal-nl` contain OpenTofu stacks.
 
-- Observation: The server already stores enough review event payload to undo and replay scoring changes.
-  Evidence: `internal/xuezh/cram/scheduler.go` writes `review_events` with old and new score snapshots; `internal/xuezh/cram/session.go` already grades inside a transaction through `gradeCardTx`.
+- Observation: Task Rally and OpenClaw Cloud have many OpenTofu roots and may not share one state layout.
+  Evidence: `taskrally/apps/cloud/infra/opentofu/envs/*` and `openclaw-cloud/infra/opentofu/envs/*` include roots for control planes, Hetzner hosts, jumpboxes, org bootstrap, Gmail auth, tenant DNS, and tenant cells.
 
-- Observation: The current browser app has no offline branch.
-  Evidence: `web/src/main.tsx` fetches `/api/cram/overview`, `/api/cram/preview`, `/api/cram/session`, and review endpoints directly. If those fetches fail, the app can only show an error.
+- Observation: `nix/nixos-config` should not be the cloud-resource owner.
+  Evidence: its AGENTS file frames it as host/system config and private runtime choices. It should consume cloud outputs or secrets, not own AWS/Azure/Hetzner resources directly.
 
-- Observation: Browser offline sync must be tested with the server genuinely stopped, not just by forcing an app flag.
-  Evidence: In the clean smoke workspace, two answers were made after killing the `18766` server; after restart, SQLite showed exactly two `review_events`, `你` at score `100` with one incorrect review, and `我` at score `600` with one correct review.
+- Observation: `xuezh` has an Azure Speech OpenTofu scaffold, but that belongs in the central OpenTofu repo once the new repo exists.
+  Evidence: `xuezh/infra/azure/speech` contains a validated OpenTofu root for the xuezh speech account.
 
-- Observation: The phone picker had a real horizontal overflow regression after the offline status control was added.
-  Evidence: A 393px browser screenshot clipped the right side of the filter/footer controls. After changing mobile grid tracks to `minmax(0, 1fr)` and stacking offline status/action, CDP metrics reported `scrollWidth=393` and `clientWidth=393`.
+- Observation: There are OpenTofu/Terraform roots scattered in smaller repos too.
+  Evidence: read-only file discovery found roots under `clawdinators`, `djtbot`, `gohome`, `lawbot`, `trmnl-inkhub`, `website`, `taskrally`, `openclaw-cloud`, and `xuezh`.
 
 ## Decision Log
 
-- Decision: Whole deck offline is the target, not “save this 100-card round.”
-  Rationale: The full deck plus audio is small enough, and the user needs to choose filters/categories while offline.
-  Date/Author: 2026-05-05 / Codex
+- Decision: Use `opentofu-infra` as the working repo name in this plan.
+  Rationale: Josh rejected `personal infra`; `opentofu-infra` is blunt, agent-discoverable, and names the actual boundary: OpenTofu-managed cloud resources. If Josh wants a less tool-named repo later, `cloud-infra` is the only serious alternative.
+  Date/Author: 2026-05-06 / Codex
 
-- Decision: Offline answers are append-only facts.
-  Rationale: Reviewing the same card twice is valid. There is no conflict UI. The server applies events by answered time and event ID, skipping duplicates.
-  Date/Author: 2026-05-05 / Codex
+- Decision: Organize stacks by purpose first, provider second.
+  Rationale: A human running `tree -L 3` should see `jjpcodes`, `xuezh`, `taskrally`, and `openclaw-cloud`, not a provider taxonomy that hides why resources exist. Provider names still appear in stack names and provider files.
+  Date/Author: 2026-05-06 / Codex
 
-- Decision: The phone keeps a temporary read model; the Go server remains scoring authority.
-  Rationale: This avoids duplicating the scheduler as a second product. The offline UI can update local session progress immediately, but durable score truth is written by Go during sync.
-  Date/Author: 2026-05-05 / Codex
+- Decision: Retired product stacks get inventory and destroy reports before any destroy.
+  Rationale: Task Rally and OpenClaw Cloud may have separate states, shared DNS, auth resources, or remnants already partly removed. Destroying from the wrong root or wrong state would be risky.
+  Date/Author: 2026-05-06 / Codex
 
-- Decision: Use PWA first, not native iOS.
-  Rationale: A PWA can cache the app shell, IndexedDB data, and audio without a SwiftUI rewrite. Native iOS remains a fallback only if real iPhone Home Screen testing shows storage or audio cannot be trusted.
-  Date/Author: 2026-05-05 / Codex
+- Decision: Nix remains machine/runtime ownership; OpenTofu owns cloud/provider resources.
+  Rationale: NixOS/Darwin configs should configure services, launchd, Caddy, Tailscale, environment files, and secret consumption. OpenTofu should own DNS zones, hosted zones, CDN, object buckets, cloud speech resources, cloud VMs, and provider-side IAM.
+  Date/Author: 2026-05-06 / Codex
 
 ## Outcomes & Retrospective
 
-Implementation is complete. The app now has a whole-deck offline snapshot, service-worker app shell, IndexedDB card/session/event storage, offline review progression, and idempotent foreground sync back to SQLite. The smoke proof uses disposable workspaces and does not mutate Josh's real card scores. Visual QA caught and fixed one mobile overflow regression before commit.
+Not started. Expected outcome is an approved repo layout, a committed central infra repo skeleton, a migrated no-drift `jjpcodes.com` stack, xuezh Azure Speech moved out of the app repo, and two written decommission reports that Josh can approve or reject before any destructive action.
 
 ## Context and Orientation
 
-The repo is `/Users/josh/code/xuezh`. The backend is Go. The main local web server is `internal/xuezh/webserver/webserver.go`. It serves the built Vite app from `web/dist`, exposes `/api/cram/...` JSON endpoints, and serves generated audio files under `/artifacts/...` from the configured workspace.
+Current source repos and likely responsibilities:
 
-The cram domain code lives in `internal/xuezh/cram`. `types.go` defines cards, practice previews, grade options, and review session state. `query.go` reads the canonical card and score state from SQLite. `session.go` owns review session progression. `scheduler.go` applies Pleco-style `correct|incorrect` scoring and writes `review_events`. `session_store.go` persists active review session queues.
+- `/Users/josh/code/website`: public site source and deploy scripts. It currently contains OpenTofu roots for `jjpcodes` and `eastwindlegal-nl`, which should move.
+- `/Users/josh/code/xuezh`: local Chinese learning app. It currently contains `infra/azure/speech`, which should move after the central repo exists.
+- `/Users/josh/code/taskrally/apps/cloud`: retired/superseded product stack with many OpenTofu roots. Inventory first, destroy only after approval.
+- `/Users/josh/code/openclaw-cloud`: older OpenClaw Cloud stack with separate OpenTofu roots. Inventory first, destroy only after approval.
+- `/Users/josh/code/nix/nixos-config`: host/runtime/service config. It should reference cloud outputs and secrets, not own cloud resources.
+- `/Users/josh/code/nix/nix-secrets`: secret material. Do not move secrets into OpenTofu.
+- `/Users/josh/code/nix/ai-stack` and `/Users/josh/AGENTS.md`: likely places for global agent instructions. Locate the canonical deployed preamble before editing.
 
-The React app lives under `web/src`. `main.tsx` coordinates overview, practice preview, review session, audio playback, and keyboard shortcuts. `BatchPicker.tsx` renders the “What to review” screen. `ReviewSession.tsx` renders the flashcard and session footer. The design-system/debug surface is intentionally isolated in `web/src/dev`.
+Proposed central repo ontology:
 
-Terms used in this plan:
+    opentofu-infra/
+      AGENTS.md
+      README.md
+      docs/
+        inventory.md
+        state-and-backends.md
+        migration-log.md
+        decommission/
+          taskrally.md
+          openclaw-cloud.md
+      stacks/
+        active/
+          jjpcodes/
+            aws-static-sites/
+          xuezh/
+            azure-speech/
+          gohome/
+            hetzner-home-services/
+        retired/
+          taskrally/
+            inventory/
+          openclaw-cloud/
+            inventory/
+        candidates/
+          README.md
+      modules/
+        aws-static-site/
+        azure-speech/
+        hcloud-host/
+      scripts/
+        inventory
+        plan
 
-An `offline deck snapshot` is one JSON payload containing every card, its current score facts, category/source summaries, and all audio paths. It is a read model: the phone uses it to select cards and render review while offline.
+Tree rationale:
 
-An `offline answer event` is one immutable local fact: event ID, session ID, item ID, `correct` or `incorrect`, shown time, answer time, elapsed milliseconds, round, and retry flag. Events are queued on the phone and later sent to the server.
+- `stacks/active` answers "what cloud things are live?"
+- `stacks/retired` answers "what used to exist and needs/has decommission evidence?"
+- `stacks/candidates` is a holding area only if inventory finds stacks that are unclear; it should be emptied or deleted once classified.
+- Stack names start with product/domain purpose, not provider. Provider appears in the leaf stack name, for example `aws-static-sites` or `azure-speech`.
+- `modules` contains only reused OpenTofu modules. If a module is only used once and does not simplify the root, keep it inline.
+- `docs/decommission` contains human-readable reports before any destructive action.
+- `scripts` exists only for repeated safe operations, not one-off glue.
 
-`IndexedDB` is the browser database used for durable structured data on the iPhone. The app uses it for cards, session state, and pending answer events.
+Stack-local shape:
 
-`Cache Storage` is the service-worker cache used for static assets and audio responses.
+    stacks/active/jjpcodes/aws-static-sites/
+      AGENTS.md
+      README.md
+      backend.tf
+      providers.tf
+      main.tf
+      variables.tf
+      outputs.tf
+      imports.md
+
+Each stack README must say:
+
+- What this stack owns.
+- What it must not own.
+- Backend/state location.
+- Required provider credentials.
+- Safe commands for `fmt`, `validate`, `plan`.
+- A rollback note or restore path if state migration fails.
 
 ## Plan of Work
 
-First, add backend offline export and sync in `internal/xuezh/cram/offline.go`. Export must return the whole deck in one server-owned shape: cards, scores, due dates, category/source summaries, scoring settings needed for local filtering, and a flattened list of audio paths. Sync must accept offline answer events, sort them by answered time then event ID, skip already-applied event IDs, and apply each missing event in one SQLite transaction through the existing `gradeCardTx`. Add `EventID` to `GradeOptions` so the sync path can preserve phone-generated event IDs and retry safely. Do not add a second scoring algorithm in Go.
+First, align on the repo name and ontology. Use `opentofu-infra` unless Josh explicitly chooses `cloud-infra`. Confirm the tree above. Confirm whether `eastwindlegal-nl` moves in the first website migration or later with a separate report.
 
-Second, add webserver endpoints in `internal/xuezh/webserver/webserver.go`: `GET /api/cram/offline/deck`, `POST /api/cram/offline/sync`, and `GET /offline/app-shell`. The app-shell endpoint should read `web/dist/index.html`, find the current built asset URLs, and return the static URLs that the service worker should cache. Keep this endpoint small; it exists only so the service worker does not need to know Vite hash names.
+Second, choose state strategy before moving any stack. The plan should inventory current state first and then propose one of:
 
-Third, add PWA files. Add `web/public/manifest.webmanifest` and `web/public/sw.js`, and link the manifest in `web/index.html`. The service worker should cache the app shell on install/activation and expose messages for caching offline audio URLs. Keep it direct: cache-first for same-origin app assets and artifacts, network-first for API except when offline data is intentionally loaded from IndexedDB by React. Do not add Workbox or another dependency unless a direct service worker proves insufficient.
+- keep each existing backend during the first move, only moving files and docs;
+- migrate to one central remote backend layout;
+- keep local state only for tiny personal stacks, with encrypted backup and clear risk notes.
 
-Fourth, add browser offline storage in `web/src/offline.ts`. This module hides IndexedDB and service-worker sequencing from React. It should provide a small surface: `registerOfflineApp()`, `saveOfflineDeck(snapshot, onProgress)`, `loadOfflineDeck()`, `saveOfflineSession(session)`, `loadOfflineSession()`, `appendOfflineEvent(event)`, `pendingOfflineEvents()`, and `markOfflineEventsSynced(ids)`. React should not open IndexedDB stores directly.
+No state backend change should happen in the same step as a stack move unless the current state layout forces it. State backups come first.
 
-Fifth, wire the existing React app to use this offline boundary. `main.tsx` should still prefer the server when online. If server fetches fail and an offline deck exists, it should render the same `BatchPicker` and `ReviewCard` using locally computed preview/session state. Add one visible control on the picker: `Make available offline`, with clear states such as `Saving cards`, `Saving audio`, `Offline ready`, and `N answers to sync`. When offline, starting a review session creates a local session from selected cards and stores it in IndexedDB. Revealing, repeat-later, grading, and undo must update the local session and pending event log without network.
+Third, create the central repo skeleton. Add root `AGENTS.md`, `README.md`, docs placeholders, and empty stack directories only for approved categories. Do not pre-create a large taxonomy. The initial tree should be small enough to understand at a glance.
 
-Sixth, sync when online in the foreground. On app start and after online actions, if pending offline events exist, send them to `/api/cram/offline/sync`. After server acknowledgement, delete only acknowledged local events, refresh the server deck snapshot, and update the offline copy. Do not rely on background sync. The UI should show sync status plainly.
+Fourth, inventory existing OpenTofu roots. For each root, collect:
 
-Seventh, update tests and QA. Add Go tests for deck export and idempotent event sync. Add frontend build coverage through the existing `pnpm build`. Add a browser smoke using the in-app browser or local automation: build, run against a throwaway workspace, save offline deck, create an offline session, grade multiple cards while the server is unavailable or offline mode is forced, reload, confirm the session resumes, restart the server, sync, and confirm server score rows changed exactly once.
+- repo and path;
+- provider(s);
+- backend/state location;
+- workspace, if any;
+- resources from state, if state is available;
+- DNS names/domains owned;
+- obvious monthly-cost resources;
+- whether the stack is active, retired, duplicate, or unknown;
+- recommended action: migrate, keep for now, retire report, or ignore.
 
-Eighth, review for simplicity. The implementation should have one offline module, not scattered IndexedDB calls. It should not add CLI knobs, duplicate schedulers, or compatibility migrations. If implementation adds too many lines, delete or flatten before handoff.
+This inventory is read-only. Do not run `tofu apply` or `tofu destroy`.
+
+Fifth, migrate `jjpcodes.com` infrastructure first. Copy the existing `website/infra/tofu/jjpcodes-blog` root into `stacks/active/jjpcodes/aws-static-sites` or a more precise leaf name if inventory shows multiple static-site stacks. Preserve state backend first. Run `tofu fmt`, `tofu validate`, and `tofu plan`. The acceptable first migration result is a no-op plan or a clearly explained provider/version-only diff that Josh approves. Then update `website/AGENTS.md` and website docs to say OpenTofu now lives in `opentofu-infra`, while website content and deploy scripts remain in `website`.
+
+Sixth, handle `eastwindlegal-nl`. If it is an active static site controlled by Josh, migrate it next under `stacks/active/eastwindlegal/aws-static-site` or under `stacks/active/jjpcodes/` only if it is truly part of the same domain/product ownership. If it is stale, inventory and ask before moving.
+
+Seventh, move xuezh Azure Speech OpenTofu. The xuezh app keeps code, config docs, and runtime env checks. The central repo owns the Azure Speech account. Update xuezh docs and AGENTS to point at the new owner. Do not touch the other agent's OpenClaw environment-variable work.
+
+Eighth, write Task Rally decommission report. Inventory all Task Rally roots and any current resources. Produce a report with:
+
+- resources still present by provider;
+- state files/backends involved;
+- dependencies or shared resources that should not be destroyed;
+- estimated blast radius;
+- proposed destroy order;
+- exact commands that would be run later;
+- "stop here for approval" line.
+
+Ninth, write OpenClaw Cloud decommission report the same way. Treat it as separate from Task Rally because it may have separate states and earlier resources.
+
+Tenth, update agent discovery docs. At minimum:
+
+- central repo root `AGENTS.md`;
+- `/Users/josh/AGENTS.md`, if this is the active global file;
+- the deployed global preamble source in `~/code/nix/ai-stack` or wherever inspection proves it lives;
+- affected repo AGENTS files in `website`, `xuezh`, `taskrally`, and `openclaw-cloud`.
+
+The docs should be short and directive: cloud/provider resources live in `opentofu-infra`; app repos should not add new OpenTofu roots except temporary staging with explicit plan; Nix owns machine runtime; secrets stay in nix-secrets.
 
 ## Concrete Steps
 
-Run from `/Users/josh/code/xuezh`.
+Run from `/Users/josh/code` unless a command says otherwise.
 
-Before editing, verify the tree:
+Read the current tree and likely roots:
 
-    git status --short
+    find /Users/josh/code -path '*/.terraform' -prune -o -path '*/node_modules' -prune -o -name '*.tf' -print
+    find /Users/josh/code -path '*/.terraform' -prune -o -name '*.tofu' -print
 
-After backend changes:
+For each candidate root, collect a read-only inventory:
 
-    gofmt -w internal/xuezh/cram internal/xuezh/webserver/webserver.go
-    devenv shell -- go test ./internal/xuezh/cram ./internal/xuezh/webserver
+    tofu -chdir=<root> fmt -check -diff
+    tofu -chdir=<root> init -backend=false
+    tofu -chdir=<root> validate
 
-After frontend changes:
+Only run state commands where state is local or the backend is already configured and credentials are present:
 
-    devenv shell -- sh -lc 'cd web && pnpm build'
+    tofu -chdir=<root> state list
 
-For full verification:
+Create the central repo only after Josh approves the name:
 
-    devenv shell -- ./scripts/check.sh
+    cd /Users/josh/code
+    mkdir opentofu-infra
+    cd opentofu-infra
+    git init
 
-For safe smoke testing, always use a throwaway workspace:
+Do not create a GitHub repo or push until the skeleton has been reviewed and committed locally.
 
-    export XUEZH_WORKSPACE_DIR=/private/tmp/xuezh-offline-smoke
-    trash "$XUEZH_WORKSPACE_DIR" 2>/dev/null || rm -rf "$XUEZH_WORKSPACE_DIR"
-    devenv shell -- go run ./cmd/xuezh-go hellochinese import --path internal/xuezh/cram/testdata/hellochinese.txt --audio none --json
-    devenv shell -- go run ./cmd/xuezh-go travel import --path internal/xuezh/cram/testdata/travel.txt --audio none --json
-    XUEZH_SKIP_AUDIO_BACKFILL=1 devenv shell -- go run ./cmd/xuezh-go web serve --port 8765
+For website migration, preserve state first. If state is local:
 
-Use the in-app browser at `http://127.0.0.1:8765/` and design-system routes. Capture mobile-width screenshots for the picker, review before reveal, review after reveal, long sentence, and long answer. Reject the UI if controls wrap, content clips, prompt position changes between reveal states, or offline controls are unclear.
+    cp terraform.tfstate terraform.tfstate.backup-<timestamp>
+
+If state is remote, record backend config and run a plan from the old root before moving:
+
+    tofu -chdir=/Users/josh/code/website/infra/tofu/jjpcodes-blog plan
+
+After copying to the central repo, run the same plan from the new root. Do not delete the old root until the new root produces an acceptable plan and docs point to the new owner.
+
+For retired stacks, write reports first under:
+
+    docs/decommission/taskrally.md
+    docs/decommission/openclaw-cloud.md
+
+Do not run:
+
+    tofu destroy
+
+until Josh explicitly approves the specific report and stack.
 
 ## Validation and Acceptance
 
-The backend is acceptable when a test proves that two offline events for the same or different cards can be submitted, a duplicate submission is skipped, and the score rows plus `review_events` show exactly one application per event ID.
+The plan is acceptable when:
 
-The PWA is acceptable when the built app registers a service worker, the manifest is served, and app shell assets can be loaded from the service-worker cache after network requests are blocked in browser automation.
-
-Whole-deck offline is acceptable when `Make available offline` saves all cards from a throwaway database, stores all existing audio paths that can be fetched, reports missing audio without generating anything, and reloads the app from local data when the server is unavailable.
-
-Offline review is acceptable when the browser can start a session from the offline deck, reveal a card, answer `Incorrect`, answer another card `Correct`, reload the page, and resume with the same queue and pending event count.
-
-Sync is acceptable when the server comes back, pending events sync in order, local pending event count drops to zero only after acknowledgement, and a fresh server preview shows the updated score/count/due facts.
-
-Regression acceptance requires `devenv shell -- ./scripts/check.sh`, `devenv shell -- sh -lc 'cd web && pnpm build'`, and browser screenshots for the normal app/design-system surfaces named above.
+1. Josh approves the repo name and top-level tree.
+2. `tree -L 4` in the central repo makes ownership obvious without reading a long README.
+3. Every moved active stack has a README explaining ownership, backend, credentials, and safe commands.
+4. `jjpcodes.com` migration has a no-drift or approved-drift `tofu plan`.
+5. `website` docs and AGENTS no longer imply website owns OpenTofu state.
+6. xuezh Azure Speech OpenTofu is moved or has an approved reason to wait.
+7. Task Rally and OpenClaw Cloud each have a written inventory and destroy report.
+8. No destructive command has run before Josh approves the matching report.
+9. Global and affected AGENTS docs point agents to the central OpenTofu owner.
+10. There are no new cloud-resource OpenTofu roots left in app repos except explicitly documented temporary staging roots.
 
 ## Idempotence and Recovery
 
-Offline deck download is safe to rerun. It replaces the local offline snapshot with the latest server state only after the new snapshot is fully stored. Audio caching is fill-missing. It must not call TTS and must not replace existing audio on disk.
+All first-pass work is read-only inventory and docs. Moving a stack must be reversible:
 
-Offline event sync is safe to retry. Each offline event has a stable event ID. The server skips event IDs already present in `review_events`. If the network fails after the server commits but before the phone receives the response, the next sync sends the same events and the server skips duplicates.
+- copy files before deleting old roots;
+- back up local state files before touching them;
+- record remote backend settings before changing backend config;
+- run old-root and new-root plans before deleting old-root files;
+- keep old roots in place until the central root is validated;
+- use Git commits at each working, reviewed slice.
 
-Use throwaway workspaces for tests and browser smokes. Do not mutate Josh's real cram-local database except for read-only UI screenshots unless explicitly asked.
-
-If service-worker behavior appears stale, unregister the service worker in browser dev tools or change the service-worker version string, rebuild, and reload. Do not mask stale app behavior by adding more runtime branches.
+Destroy work is deliberately separate. A destroy report is not approval. Approval must name the stack and report version.
 
 ## Artifacts and Notes
 
-Relevant current files:
+Known initial roots to inventory:
 
-    internal/xuezh/cram/types.go
-    internal/xuezh/cram/query.go
-    internal/xuezh/cram/session.go
-    internal/xuezh/cram/session_store.go
-    internal/xuezh/cram/scheduler.go
-    internal/xuezh/webserver/webserver.go
-    web/src/main.tsx
-    web/src/BatchPicker.tsx
-    web/src/ReviewSession.tsx
-    web/src/types.ts
-    web/src/utils.ts
-    web/index.html
-    web/vite.config.ts
+    /Users/josh/code/website/infra/tofu/jjpcodes-blog
+    /Users/josh/code/website/infra/tofu/eastwindlegal-nl
+    /Users/josh/code/xuezh/infra/azure/speech
+    /Users/josh/code/taskrally/apps/cloud/infra/opentofu/envs/*
+    /Users/josh/code/openclaw-cloud/infra/opentofu/envs/*
+    /Users/josh/code/gohome/infra/tofu
+    /Users/josh/code/djtbot/infra/opentofu/*
+    /Users/josh/code/trmnl-inkhub/infra/tofu
+    /Users/josh/code/nix/nixos-config/stacks/ai/infra/gcp/moltbot
 
-The server is already ACID for normal review: `GradeReviewSession` opens a SQLite transaction, calls `gradeCardTx`, advances the session, saves the session, and commits. Offline sync should reuse the same lower-level scoring path rather than inventing a new scorer.
+Do not assume this list is complete. The inventory command in Concrete Steps is the source of truth for the first report.
 
 ## Interfaces and Dependencies
 
-In `internal/xuezh/cram/types.go`, add:
+Central repo responsibilities:
 
-    type OfflineDeckSnapshot struct { ... }
-    type OfflineDeckCard struct { ... }
-    type OfflineReviewEvent struct { ... }
-    type OfflineSyncResult struct { ... }
+- OpenTofu stack files.
+- OpenTofu modules used by multiple stacks.
+- State/backend documentation.
+- Inventory and decommission reports.
+- Provider-specific cloud resource ownership.
 
-In `internal/xuezh/cram/offline.go`, define:
+Application repo responsibilities:
 
-    func OfflineDeck(now time.Time) (OfflineDeckSnapshot, error)
-    func SyncOfflineReviewEvents(events []OfflineReviewEvent, syncedAt time.Time) (OfflineSyncResult, error)
+- Application code.
+- App deploy scripts.
+- App runtime docs.
+- References to central infra outputs.
+- No new long-lived OpenTofu roots unless Josh approves an exception.
 
-`OfflineDeck` hides SQL details and returns the exact read model the browser needs. `SyncOfflineReviewEvents` hides idempotency, event ordering, and transaction boundaries from the webserver.
+Nix repo responsibilities:
 
-In `internal/xuezh/webserver/webserver.go`, add:
+- Machine configuration.
+- Runtime services.
+- launchd/systemd.
+- Caddy/Tailscale/service ingress on hosts.
+- Secret consumption paths.
 
-    GET  /api/cram/offline/deck
-    POST /api/cram/offline/sync
-    GET  /offline/app-shell
+Secrets repo responsibilities:
 
-In `web/src/offline.ts`, define:
+- Secret values.
+- Age/SOPS/secret material.
+- No OpenTofu state unless explicitly designed and documented later.
 
-    registerOfflineApp(): Promise<void>
-    saveOfflineDeck(snapshot, progress): Promise<void>
-    loadOfflineDeck(): Promise<OfflineDeckSnapshot | null>
-    saveOfflineSession(session): Promise<void>
-    loadOfflineSession(): Promise<ReviewSessionState | null>
-    appendOfflineEvent(event): Promise<void>
-    pendingOfflineEvents(): Promise<OfflineReviewEvent[]>
-    markOfflineEventsSynced(ids: string[]): Promise<void>
-
-The frontend may compute practice previews from the offline snapshot, but permanent scoring updates belong to the server during sync. If a small local score projection is needed for immediate offline counts, keep it inside `offline.ts` and document that it is a temporary UI projection, not the durable authority.
+Revision note: This ExecPlan was created from Josh's infra alignment request on 2026-05-06. It intentionally stops before any state move, cloud mutation, or retired-stack destroy.
