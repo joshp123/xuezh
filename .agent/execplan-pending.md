@@ -25,9 +25,11 @@ This plan does not destroy anything and does not move state until Josh approves 
 - [x] (2026-05-06T16:25Z) Produced Task Rally and OpenClaw Cloud executive decommission report drafts and explicitly stopped short of any destructive action.
 - [x] (2026-05-06T16:25Z) Added app-side AGENTS cross-references in clean repos `xuezh` and `djtbot`.
 - [x] (2026-05-06T16:25Z) Recorded stop lines for dirty `website` and `openclaw-cloud` repos so this work does not overwrite unrelated agent/user changes.
+- [x] (2026-05-06T16:45Z) Ported `jjpcodes.com` OpenTofu config into `/Users/josh/code/opentofu-infra/websites/jjpcodes.com` without moving state.
+- [x] (2026-05-06T16:45Z) Verified `jjpcodes.com` central root with `tofu fmt`, `tofu init -backend=false`, `tofu validate`, and a no-drift `tofu plan -refresh=false -lock=false -state=<old-state>` using `AWS_PROFILE=homelab-admin`; new and old roots both returned `No changes`.
 - [ ] Align with Josh on state backend strategy.
 - [x] Create or choose the central OpenTofu repo.
-- [ ] Migrate `jjpcodes.com` OpenTofu into the central repo with a no-drift plan.
+- [x] Migrate `jjpcodes.com` OpenTofu into the central repo with a no-drift plan.
 - [ ] Move xuezh Azure Speech OpenTofu scaffold into the central repo after the repo shape is proven.
 - [x] Produce Task Rally and OpenClaw Cloud destroy reports, then stop for approval.
 - [ ] Update global and affected AGENTS docs on both sides so future agents know where OpenTofu belongs and where the related app/content lives.
