@@ -52,8 +52,8 @@ resource "azapi_resource" "speech" {
   parent_id = azurerm_resource_group.xuezh.id
 
   body = jsonencode({
-    kind = "SpeechServices"
-    sku  = { name = "F0" }
+    kind       = "SpeechServices"
+    sku        = { name = "F0" }
     properties = {}
   })
 }
