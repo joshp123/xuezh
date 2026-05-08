@@ -59,7 +59,7 @@
         in {
           name = "xuezh";
           skills = [ ./skills/xuezh ];
-          packages = [ self.packages.${system}.default edgeTts ];
+          packages = [ self.packages.${system}.default pkgs.ffmpeg edgeTts ];
           needs = {
             stateDirs = [ ".config/xuezh" ];
             requiredEnv = [
