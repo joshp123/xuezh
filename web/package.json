@@ -1,8 +1,10 @@
 {
+  "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc && vite build",
     "preview": "vite preview --host 127.0.0.1",
+    "test:offline-sync": "node --test tests/offline-sync-rules.test.mts",
     "test:offline-sw": "node --test tests/offline-sw.test.mjs"
   },
   "dependencies": {

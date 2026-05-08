@@ -31,6 +31,7 @@ export function BatchPicker(props: {
   offlineSaveState: OfflineSaveState | null;
   offlineError: string | null;
   pendingOfflineCount: number;
+  syncableOfflineCount: number;
   onPrepareOffline: () => void;
   onSyncOffline: () => void | Promise<void>;
 }) {
@@ -129,6 +130,7 @@ export function BatchPicker(props: {
           offlineMode={props.offlineMode}
           busy={props.offlineBusy}
           syncing={props.offlineSyncing}
+          syncableCount={props.syncableOfflineCount}
           onClose={() => setOfflineOpen(false)}
           onPrepare={props.onPrepareOffline}
           onSync={props.onSyncOffline}
@@ -142,6 +144,7 @@ function OfflineSheet(props: {
   state: OfflineSaveState | null;
   error: string | null;
   pendingCount: number;
+  syncableCount: number;
   activeReview: boolean;
   offlineMode: boolean;
   busy: boolean;
@@ -151,6 +154,9 @@ function OfflineSheet(props: {
   onSync: () => void | Promise<void>;
 }) {
   const state = props.state;
+  const syncHint = props.activeReview
+    ? "Older answers sync while you review; the latest answer stays local so Undo still works."
+    : "Answers sync when this device is online.";
   return (
     <div className="offlineOverlay" role="presentation" onClick={props.onClose}>
       <section className="offlineSheet" role="dialog" aria-modal="true" aria-labelledby="offline-title" onClick={(event) => event.stopPropagation()}>
@@ -167,14 +173,14 @@ function OfflineSheet(props: {
           <div><dt>Storage</dt><dd>{storageText(state)}</dd></div>
           <div><dt>Answers</dt><dd>{props.pendingCount === 0 ? "Synced" : `${props.pendingCount} waiting`}</dd></div>
         </dl>
-        {state && <p className="offlineHint">Last saved {relativeSavedAt(state.saved_at)}. Answers sync when this device is online and no review is active.</p>}
-        {props.activeReview && props.pendingCount > 0 && <p className="offlineHint">Finish this review before syncing so Undo stays safe.</p>}
+        {state && <p className="offlineHint">Last saved {relativeSavedAt(state.saved_at)}. {syncHint}</p>}
+        {props.activeReview && props.pendingCount > 0 && props.syncableCount === 0 && <p className="offlineHint">Answer one more card, or finish this review, to sync the latest answer.</p>}
         {props.error && <p className="offlineError">Sync problem: {props.error}</p>}
         <div className="offlineActions">
           <button type="button" className="primary" onClick={props.onPrepare} disabled={props.busy}>
             {props.busy ? "Saving…" : state ? "Refresh offline copy" : "Save offline"}
           </button>
-          <button type="button" onClick={() => { void props.onSync(); }} disabled={props.syncing || props.pendingCount === 0 || props.activeReview}>
+          <button type="button" onClick={() => { void props.onSync(); }} disabled={props.syncing || props.syncableCount === 0}>
             {props.syncing ? "Syncing…" : "Sync now"}
           </button>
         </div>
