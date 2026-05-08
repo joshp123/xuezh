@@ -2,7 +2,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "preview": "vite preview --host 127.0.0.1",
+    "test:offline-sw": "node --test tests/offline-sw.test.mjs"
   },
   "dependencies": {
     "react": "^19.0.0",

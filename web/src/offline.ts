@@ -81,8 +81,26 @@ async function cacheAppShell() {
   const response = await fetch("/offline/app-shell", { cache: "no-store" });
   if (!response.ok) throw new Error(await response.text());
   const body = (await response.json()) as { assets?: string[] };
+  const assets = body.assets ?? ["/xuezh"];
   const cache = await caches.open(appCacheName);
-  await Promise.all((body.assets ?? ["/"]).map((asset) => cache.add(asset)));
+  const missing: string[] = [];
+  for (const asset of assets) {
+    try {
+      const assetResponse = await fetch(asset, { cache: "no-store" });
+      if (!assetResponse.ok) throw new Error(`${assetResponse.status}`);
+      await cache.put(asset, assetResponse.clone());
+    } catch {
+      if (!(await cache.match(asset))) missing.push(asset);
+    }
+  }
+  const requiredMissing = missing.filter(isRequiredAppAsset);
+  if (requiredMissing.length > 0) {
+    throw new Error(`Could not save app for offline use (${requiredMissing.length} files missing).`);
+  }
+}
+
+function isRequiredAppAsset(asset: string) {
+  return asset === "/xuezh" || asset === "/index.html" || asset.startsWith("/assets/");
 }
 
 export async function loadOfflineDeck() {

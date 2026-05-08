@@ -250,7 +250,7 @@ func staticHandler() http.Handler {
 
 func offlineAppShellAssets() ([]string, error) {
 	dist := filepath.Join("web", "dist")
-	assets := []string{"/", "/xuezh", "/index.html", "/manifest.webmanifest", "/sw.js"}
+	assets := []string{"/", "/xuezh", "/index.html", "/manifest.webmanifest", "/sw.js", "/icon.svg"}
 	assetDir := filepath.Join(dist, "assets")
 	entries, err := os.ReadDir(assetDir)
 	if err != nil {
