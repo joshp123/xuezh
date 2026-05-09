@@ -19,6 +19,7 @@ import {
   toggleOfflineRepeat,
   undoOfflineSession
 } from "./offline";
+import { fetchWithTimeout } from "./http";
 import { syncableOfflineEvents } from "./offlineSyncRules";
 import { Shell, State } from "./shared";
 import type { OfflineSessionStore } from "./offline";
@@ -142,7 +143,7 @@ function CramApp() {
     setError(null);
     try {
       if (await loadActiveOfflineStore()) return;
-      const response = await fetch("/api/cram/overview");
+      const response = await fetchWithTimeout("/api/cram/overview");
       if (!response.ok) throw new Error(await response.text());
       setOverview((await response.json()) as Overview);
       setOfflineMode(false);
@@ -162,7 +163,7 @@ function CramApp() {
       return;
     }
     try {
-      const response = await fetch("/api/cram/preview", {
+      const response = await fetchWithTimeout("/api/cram/preview", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(filters)
@@ -180,7 +181,7 @@ function CramApp() {
     setError(null);
     try {
       if (await loadActiveOfflineStore()) return;
-      const response = await fetch("/api/cram/session");
+      const response = await fetchWithTimeout("/api/cram/session");
       if (!response.ok) throw new Error(await response.text());
       const body = (await response.json()) as { session: ReviewSessionState | null };
       if (body.session?.status === "active" && body.session.card) {
@@ -207,7 +208,7 @@ function CramApp() {
     setOfflineSyncing(true);
     setOfflineError(null);
     try {
-      const response = await fetch("/api/cram/offline/sync", {
+      const response = await fetchWithTimeout("/api/cram/offline/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ events: eventsToSync })
@@ -220,7 +221,7 @@ function CramApp() {
       const remainingSyncable = syncableOfflineEvents(remaining, localStore);
       setSyncableOfflineCount(remainingSyncable.length);
       if (remaining.length === 0) {
-        const deckResponse = await fetch("/api/cram/offline/deck");
+        const deckResponse = await fetchWithTimeout("/api/cram/offline/deck");
         if (deckResponse.ok) {
           const deck = (await deckResponse.json()) as OfflineDeckSnapshot;
           const state = await saveOfflineDeck(deck, undefined, false);
@@ -245,7 +246,7 @@ function CramApp() {
     setError(null);
     try {
       await registerOfflineApp();
-      const response = await fetch("/api/cram/offline/deck");
+      const response = await fetchWithTimeout("/api/cram/offline/deck");
       if (!response.ok) throw new Error(await response.text());
       const deck = (await response.json()) as OfflineDeckSnapshot;
       const state = await saveOfflineDeck(deck, (progress) => {
@@ -382,7 +383,7 @@ function CramApp() {
         applySession(store.session);
         return;
       }
-      const response = await fetch("/api/cram/session/start", {
+      const response = await fetchWithTimeout("/api/cram/session/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ limit: batchLimit, card_ids: selectedCards.map((item) => item.item_id) })
@@ -407,7 +408,7 @@ function CramApp() {
         setSession(store.session);
         return;
       }
-      const response = await fetch("/api/cram/session/reveal", {
+      const response = await fetchWithTimeout("/api/cram/session/reveal", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: session.id })
@@ -430,7 +431,7 @@ function CramApp() {
         setSession(store.session);
         return;
       }
-      const response = await fetch("/api/cram/session/repeat", {
+      const response = await fetchWithTimeout("/api/cram/session/repeat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: session.id })
@@ -460,7 +461,7 @@ function CramApp() {
         setSyncableOfflineCount(syncableOfflineEvents(events, store).length);
         return;
       }
-      const response = await fetch("/api/cram/session/undo", {
+      const response = await fetchWithTimeout("/api/cram/session/undo", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ session_id: session.id })
@@ -490,7 +491,7 @@ function CramApp() {
         setSyncableOfflineCount(syncableOfflineEvents(events, store).length);
         return;
       }
-      const response = await fetch("/api/cram/session/grade", {
+      const response = await fetchWithTimeout("/api/cram/session/grade", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ item_id: card.item_id, grade: value, session_id: session.id, shown_at: shownAt, answered_at: answeredAt, elapsed_ms: elapsedMs })

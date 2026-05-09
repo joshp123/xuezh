@@ -16,6 +16,7 @@ import type {
   ReviewSessionState,
   ScoreBuckets
 } from "./types";
+import { fetchWithTimeout } from "./http";
 import { categoryKey, sourceLabel } from "./utils";
 
 const dbName = "xuezh-offline-v1";
@@ -78,7 +79,7 @@ export async function saveOfflineDeck(snapshot: OfflineDeckSnapshot, onProgress?
 
 async function cacheAppShell() {
   if (!("caches" in window)) return;
-  const response = await fetch("/offline/app-shell", { cache: "no-store" });
+  const response = await fetchWithTimeout("/offline/app-shell", { cache: "no-store" });
   if (!response.ok) throw new Error(await response.text());
   const body = (await response.json()) as { assets?: string[] };
   const assets = body.assets ?? ["/xuezh"];
@@ -86,7 +87,7 @@ async function cacheAppShell() {
   const missing: string[] = [];
   for (const asset of assets) {
     try {
-      const assetResponse = await fetch(asset, { cache: "no-store" });
+      const assetResponse = await fetchWithTimeout(asset, { cache: "no-store" });
       if (!assetResponse.ok) throw new Error(`${assetResponse.status}`);
       await cache.put(asset, assetResponse.clone());
     } catch {
