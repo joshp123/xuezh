@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -234,6 +236,10 @@ func staticHandler() http.Handler {
 				http.ServeFile(w, r, filepath.Join(dist, "index.html"))
 				return
 			}
+			if fallback, ok := fallbackEntrypointAsset(dist, r.URL.Path); ok {
+				http.ServeFile(w, r, fallback)
+				return
+			}
 			files.ServeHTTP(w, r)
 		})
 	}
@@ -246,6 +252,35 @@ func staticHandler() http.Handler {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write([]byte(`<main style="font:16px system-ui;padding:32px;max-width:720px;margin:auto"><h1>xuezh web assets not built</h1><p>Run <code>cd web && pnpm install && pnpm build</code>, then restart <code>xuezh web serve</code>.</p></main>`))
 	})
+}
+
+func fallbackEntrypointAsset(dist string, requestPath string) (string, bool) {
+	clean := path.Clean("/" + strings.TrimPrefix(requestPath, "/"))
+	if path.Dir(clean) != "/assets" {
+		return "", false
+	}
+	base := path.Base(clean)
+	ext := path.Ext(base)
+	if !strings.HasPrefix(base, "index-") || (ext != ".js" && ext != ".css") {
+		return "", false
+	}
+	original := filepath.Join(dist, filepath.FromSlash(strings.TrimPrefix(clean, "/")))
+	if _, err := os.Stat(original); err == nil {
+		return "", false
+	}
+	matches, err := filepath.Glob(filepath.Join(dist, "assets", "index-*"+ext))
+	if err != nil || len(matches) == 0 {
+		return "", false
+	}
+	sort.Slice(matches, func(i, j int) bool {
+		left, leftErr := os.Stat(matches[i])
+		right, rightErr := os.Stat(matches[j])
+		if leftErr == nil && rightErr == nil && !left.ModTime().Equal(right.ModTime()) {
+			return left.ModTime().After(right.ModTime())
+		}
+		return matches[i] > matches[j]
+	})
+	return matches[0], true
 }
 
 func offlineAppShellAssets() ([]string, error) {
