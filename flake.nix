@@ -20,7 +20,7 @@
             src = ./.;
             subPackages = [ "cmd/xuezh-go" ];
 
-            vendorHash = "sha256-d8CP13/L/0pLuaCGIeJzaLdSxMQGo8CoASYAsnx0GAk=";
+            vendorHash = "sha256-Jwii4qsD6xSvicVOQDaCLPWGlrcwYkxq52oACHd3v30=";
 
             buildInputs = [ pkgs.sqlite ];
 
@@ -53,19 +53,13 @@
     in
     perSystem // {
       openclawPlugin = system:
-        let
-          pkgs = import nixpkgs { inherit system; };
-          edgeTts = if pkgs ? edge-tts then pkgs.edge-tts else pkgs.python3Packages.edge-tts;
-        in {
+        {
           name = "xuezh";
           skills = [ ./skills/xuezh ];
-          packages = [ self.packages.${system}.default pkgs.ffmpeg edgeTts ];
+          packages = [ self.packages.${system}.default ];
           needs = {
-            stateDirs = [ ".config/xuezh" ];
-            requiredEnv = [
-              "XUEZH_AZURE_SPEECH_KEY_FILE"
-              "XUEZH_AZURE_SPEECH_REGION"
-            ];
+            stateDirs = [ ];
+            requiredEnv = [ ];
           };
         };
     };

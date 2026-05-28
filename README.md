@@ -9,9 +9,9 @@ This repo is a **local learning engine** for Mandarin study. It is designed to b
 Primary author: **Codex** using the **gpt-5.2-codex** model.
 
 ## Recommended usage (Clawdbot)
-**Recommended**: run `xuezh` as a CLI tool from a bot agent (Clawdbot) and parse JSON outputs.  
-Use a config file for credentials/behavior, and keep dependencies pinned in the bot's dev environment.  
-You will need an Azure Speech key + region (free tier is fine to start).
+**Recommended**: run `xuezh` as a CLI tool from a bot agent (Clawdbot) and parse JSON outputs.
+Use a config file for mode/credentials, and keep dependencies pinned in the bot's dev environment.
+For managed OpenClaw, the Mac CLI is client-backed and the Azure Speech key stays on the mini-server.
 
 Clawdbot (upstream) repo:
 ```
@@ -38,9 +38,9 @@ Key interaction flows (bot ↔ user):
    Bot calls:
    
    ```text
-   xuezh audio tts --text "你好" --json
+   xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out /tmp/xuezh-tts.ogg --json
    ```
-   Bot returns the `audio_tts` artifact as a voice note.
+   Bot returns the local delivery file as a voice note. Server artifact paths in the JSON are audit metadata.
 
 3) **Progress recap (facts → summary)**  
    User asks “How am I doing?”  
@@ -65,14 +65,22 @@ Example screenshots (from a bot flow):
   </tr>
 </table>
 
-Example config (`~/.config/xuezh/config.toml`):
+Mac OpenClaw config (`/etc/xuezh/config.toml`):
 ```toml
+[client]
+server_url = "https://chinese.jjpcodes.com"
+```
+
+Mini-server config (`/etc/xuezh/config.toml`):
+```toml
+[workspace]
+dir = "/var/lib/xuezh"
+
 [azure.speech]
 key_file = "/run/agenix/xuezh-azure-speech-key"
 region = "westeurope"
 
 [audio]
-backend_global = "azure.speech"
 process_voice_backend = "azure.speech"
 convert_backend = "ffmpeg"
 tts_backend = "edge-tts"
@@ -103,8 +111,8 @@ $ xuezh audio process-voice --in /path/to/voice.m4a --ref-text "你好" --json
 
 Text-to-speech (audio artifact):
 ```text
-$ xuezh audio tts --text "你好" --json
-{"ok":true,"schema_version":"1.0","command":"audio.tts","data":{"voice":"zh-CN-XiaoxiaoNeural"},"artifacts":[{"purpose":"audio_tts","path":"artifacts/audio/tts/....wav"}],"truncated":false,"limits":{}}
+$ xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out /tmp/xuezh-tts.ogg --json
+{"ok":true,"schema_version":"1.0","command":"audio.tts","data":{"voice":"zh-CN-XiaoxiaoNeural","delivery_path":"/tmp/xuezh-tts.ogg"},"artifacts":[{"purpose":"audio_tts","path":"artifacts/.../tts.ogg"}],"truncated":false,"limits":{}}
 ```
 
 SRS review (recall vs pronunciation):
@@ -142,7 +150,7 @@ Azure notes:
 - Quick setup:
   1) Create an Azure Speech resource (region `westeurope` is fine).
   2) Grab the key + region from the Azure portal.
-  3) Put the key in your config file (`[azure.speech] key_file = ...`) and set `region`, or export `XUEZH_AZURE_SPEECH_KEY_FILE` + `XUEZH_AZURE_SPEECH_REGION`.
+  3) Put the key in the server config file (`[azure.speech] key_file = ...`) and set `region`.
   4) Run `xuezh audio process-voice --in /path/to/audio.m4a --ref-text "你好" --json`.
 - Free tier includes 5 audio hours/month for Speech to Text and 0.5M Neural TTS characters/month.
 - Pronunciation Assessment is billed at the baseline Speech to Text rate; prosody/grammar/vocabulary/topic are add-on charges.
@@ -187,7 +195,7 @@ xuezh report hsk --level 6 --json
 Notes:
 - Characters are **not** imported by default (v1 scope). Add `--include-chars` if needed.
 - The seed script filters to levels 1–6. If your dataset includes a `7–9` bucket, import those rows separately; reporting supports `--level 7-9`.
-- Set `XUEZH_WORKSPACE_DIR=~/.clawdbot/workspace/xuezh` in Clawdbot so the bot and CLI share the same DB.
+- Managed OpenClaw should not set a xuezh workspace. It should use `[client].server_url` and let the mini-server own `/var/lib/xuezh`.
 
 ## What’s included
 
@@ -210,13 +218,9 @@ Notes:
 
 ## Workspace / data path
 
-The engine stores data under:
+Local/server mode stores data under `[workspace].dir`. Managed production uses `/var/lib/xuezh`.
 
-- `~/.clawdbot/workspace/xuezh/`
-
-Override via environment variables:
-- `XUEZH_WORKSPACE_DIR`
-- `XUEZH_DB_PATH`
+Client-backed mode uses `[client].server_url` and does not open a local xuezh workspace. It may write caller-requested delivery files such as `/tmp/xuezh-tts.ogg`, but those files are not learner state.
 
 ## Ticket execution method
 

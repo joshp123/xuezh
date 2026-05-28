@@ -25,18 +25,19 @@ Public commands:
 
 Internal primitives (`audio.stt`, `audio.assess`) accept `--backend` but are not part of the public contract.
 
-Environment overrides (deterministic, explicit):
-- Global: `XUEZH_AUDIO_BACKEND=<BACKEND_ID>`
-- Per-command:
-  - `XUEZH_AUDIO_PROCESS_VOICE_BACKEND`
-  - `XUEZH_AUDIO_CONVERT_BACKEND`
-  - `XUEZH_AUDIO_TTS_BACKEND`
+Config file selection (deterministic, explicit):
+- Managed hosts read `/etc/xuezh/config.toml`.
+- Developer workspaces read `~/.config/xuezh/config.toml`.
+- `[audio].process_voice_backend`
+- `[audio].convert_backend`
+- `[audio].tts_backend`
 
 Precedence:
 1) CLI flag (when present)
-2) Per-command env var
-3) Global env var
-4) Command default
+2) Config file
+3) Command default
+
+xuezh-specific env vars are not backend config inputs.
 
 ## Azure Speech (pronunciation assessment)
 
@@ -44,8 +45,8 @@ Backend id: `azure.speech`
 Default for `audio.process-voice`.
 
 Requirements:
-- `AZURE_SPEECH_KEY`
-- `AZURE_SPEECH_REGION`
+- `[azure.speech].key_file` or `[azure.speech].key`
+- `[azure.speech].region`
 
 Free-tier policy:
 - Use the free-tier quota only; if Azure returns quota/limit errors, the CLI surfaces a typed error.

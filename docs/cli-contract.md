@@ -153,32 +153,37 @@ All commands return one of:
 ### audio tts
 - `xuezh audio tts --text "<text>" --voice "<voice>" --out <path> --backend edge-tts --json`
 - command id: `audio.tts`
-- `--out` must be inside the workspace (use a relative path like `artifacts/tts.ogg`)
+- local mode: `--out` must be inside the workspace (use a relative path like `artifacts/tts.ogg`)
+- client-backed mode: `--out` is a local delivery path for the caller; the server still writes the canonical artifact
 
 ### audio process-voice
 - `xuezh audio process-voice --in <voice.ogg> --ref-text "<text>" --json`
 - command id: `audio.process-voice`
 - output schema: `schemas/audio.process-voice.schema.json`
-- default pronunciation backend: `azure.speech` (requires `XUEZH_AZURE_SPEECH_KEY_FILE` + `XUEZH_AZURE_SPEECH_REGION`)
+- default pronunciation backend: `azure.speech` (configured under `[audio]` and `[azure.speech]`)
 - output includes inline `assessment` + `transcript` for actionable feedback; full detail remains in artifacts
 - if inline word/phoneme detail is too large, only summary is returned inline and `truncated=true` with full detail in artifacts
 
 ### audio backend selection (deterministic)
-- Global override: `XUEZH_AUDIO_BACKEND=<backend_id>`
-- Per-command overrides:
-  - `XUEZH_AUDIO_PROCESS_VOICE_BACKEND=<backend_id>`
-  - `XUEZH_AUDIO_CONVERT_BACKEND=<backend_id>`
-  - `XUEZH_AUDIO_TTS_BACKEND=<backend_id>`
-- Config file: `~/.config/xuezh/config.toml` (or `$XDG_CONFIG_HOME/xuezh/config.toml`)
-  - `[audio] backend_global`, `process_voice_backend`, `convert_backend`, `tts_backend`
+- Config file: `/etc/xuezh/config.toml` on managed hosts, otherwise `~/.config/xuezh/config.toml`
+  - `[audio] process_voice_backend`, `convert_backend`, `tts_backend`
 - CLI flags still apply for `audio convert` / `audio tts` (`--backend`).
-- Precedence: CLI flag > config file > env vars > default.
+- Precedence: CLI flag when present, then config file, then command default.
+- xuezh-specific env vars are not config inputs.
+
+### client-backed mode
+- `[client].server_url = "https://chinese.jjpcodes.com"` makes the CLI call the remote xuezh service for OpenClaw learning workflows.
+- `[client]` and `[workspace]` are mutually exclusive.
+- In client-backed mode, server artifact paths are audit metadata, not Mac-local filesystem paths.
+- Unsupported server-local commands return `UNSUPPORTED_CLIENT_COMMAND` before opening a local workspace.
 
 ### config file (optional)
 Example:
 ```
+[workspace]
+dir = "/var/lib/xuezh"
+
 [audio]
-backend_global = "azure.speech"
 process_voice_backend = "azure.speech"
 convert_backend = "ffmpeg"
 tts_backend = "edge-tts"
@@ -199,6 +204,8 @@ region = "westeurope"
 ### doctor
 - `xuezh doctor --json`
 - command id: `doctor`
+- local mode reports workspace, DB, tool, and Azure config checks.
+- client-backed mode reports `client.mode`, `server.reachable`, and server-side checks from the remote xuezh service.
 
 
 ### event log

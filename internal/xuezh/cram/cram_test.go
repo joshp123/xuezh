@@ -10,9 +10,24 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-func TestTravelImportAndTwoButtonScheduler(t *testing.T) {
+func useTestWorkspace(t *testing.T) string {
+	t.Helper()
 	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	configHome := t.TempDir()
+	t.Setenv("XDG_CONFIG_HOME", configHome)
+	configPath := filepath.Join(configHome, "xuezh", "config.toml")
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	body := "[workspace]\ndir = \"" + workspace + "\"\n"
+	if err := os.WriteFile(configPath, []byte(body), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	return workspace
+}
+
+func TestTravelImportAndTwoButtonScheduler(t *testing.T) {
+	workspace := useTestWorkspace(t)
 
 	result, err := ImportTravelSurvival(ImportOptions{Path: "testdata/travel.txt", AudioMode: "none"})
 	if err != nil {
@@ -107,8 +122,7 @@ func TestApplyPlecoAnswer(t *testing.T) {
 }
 
 func TestReviewSessionPersistsQueueGradeAndUndo(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	_ = useTestWorkspace(t)
 	if _, err := ImportTravelSurvival(ImportOptions{Path: "testdata/travel.txt", AudioMode: "none"}); err != nil {
 		t.Fatalf("import travel: %v", err)
 	}
@@ -167,8 +181,7 @@ func TestReviewSessionPersistsQueueGradeAndUndo(t *testing.T) {
 }
 
 func TestDuePreviewAgesWithTime(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	_ = useTestWorkspace(t)
 	if _, err := ImportTravelSurvival(ImportOptions{Path: "testdata/travel.txt", AudioMode: "none"}); err != nil {
 		t.Fatalf("import travel: %v", err)
 	}
@@ -207,8 +220,7 @@ func TestDuePreviewAgesWithTime(t *testing.T) {
 }
 
 func TestHelloChinesePlecoTextImport(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	_ = useTestWorkspace(t)
 
 	result, err := ImportHelloChinese(ImportOptions{Path: "testdata/hellochinese.txt", AudioMode: "none"})
 	if err != nil {
@@ -237,8 +249,7 @@ func TestHelloChinesePlecoTextImport(t *testing.T) {
 }
 
 func TestLearnerStateIsCompactAndStable(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	_ = useTestWorkspace(t)
 
 	if _, err := ImportHelloChinese(ImportOptions{Path: "testdata/hellochinese.txt", AudioMode: "none"}); err != nil {
 		t.Fatalf("import hellochinese: %v", err)
@@ -305,8 +316,7 @@ func TestLearnerStateIsCompactAndStable(t *testing.T) {
 }
 
 func TestImportGeneratesAudioWithCleanSentence(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	workspace := useTestWorkspace(t)
 	var texts []string
 	result, err := ImportHelloChinese(ImportOptions{
 		Path:      "testdata/hellochinese.txt",
@@ -343,8 +353,7 @@ func TestImportGeneratesAudioWithCleanSentence(t *testing.T) {
 }
 
 func TestPlecoScoreImportUsesMetadataOnly(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	workspace := useTestWorkspace(t)
 	if _, err := ImportHelloChinese(ImportOptions{Path: "testdata/hellochinese.txt", AudioMode: "none"}); err != nil {
 		t.Fatalf("import hellochinese: %v", err)
 	}
@@ -458,8 +467,7 @@ func TestPlecoScoreImportUsesMetadataOnly(t *testing.T) {
 }
 
 func TestPlecoScoreImportPartiallySeedsMismatchedCategory(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	workspace := useTestWorkspace(t)
 	if _, err := ImportHelloChinese(ImportOptions{Path: "testdata/hellochinese.txt", AudioMode: "none"}); err != nil {
 		t.Fatalf("import hellochinese: %v", err)
 	}
@@ -483,8 +491,7 @@ func TestPlecoScoreImportPartiallySeedsMismatchedCategory(t *testing.T) {
 }
 
 func TestOfflineDeckAndIdempotentSync(t *testing.T) {
-	workspace := t.TempDir()
-	t.Setenv("XUEZH_WORKSPACE_DIR", workspace)
+	workspace := useTestWorkspace(t)
 	if _, err := ImportTravelSurvival(ImportOptions{
 		Path:      "testdata/travel.txt",
 		AudioMode: "sentence",

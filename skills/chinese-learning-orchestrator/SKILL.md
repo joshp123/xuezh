@@ -21,6 +21,11 @@ This Skill defines:
 Your job is to call `xuezh` exactly as specified there.
 If any command returns `NOT_IMPLEMENTED`, stop and request implementation instead of guessing.
 
+Runtime rule:
+- Use the `xuezh` CLI JSON contract, not protobuf directly.
+- On managed OpenClaw, the local CLI is client-backed via `[client].server_url`; do not set or rely on `XUEZH_*` workspace/audio/Azure env vars.
+- Treat server artifact paths as audit metadata. Only caller-provided or XDG-cache delivery paths are local files you can hand back to the user.
+
 ## ZFC boundary (non-negotiable)
 
 The backend is a **dumb pipe**:
@@ -57,7 +62,7 @@ The engine cannot infer what happened unless you **log it**.
 Your job is to turn user interactions into **facts**:
 
 - Reviews: call `review grade` for each reviewed item.
-- Speaking: use `audio process-voice` and store the returned artifacts.
+- Speaking: use `audio process-voice`; it records the pronunciation attempt in xuezh state and returns artifacts for audit/feedback.
 - Exposure: after you serve any new content (story, dialogue, exercise, chat snippet), log `content_served` with the content ID and modality.
 - Log item-level `exposure` only when the tool call you used returned item IDs. `learner.state` deliberately omits internal IDs, so do not fabricate `--items` values from learner-state rows.
 
@@ -338,7 +343,7 @@ Stop early unless the user explicitly asks for more.
 
 ### /speak style
 - pick a short phrase (<= 7 syllables)
-- generate reference audio via `audio tts`
+- generate reference audio via `audio tts --out <local temp path>`
 - user sends voice note
 - `audio process-voice ...` (local v0 assessment uses transcript match only when selected)
 - give 1–2 fixes, retry once
@@ -347,7 +352,7 @@ Stop early unless the user explicitly asks for more.
 - learner state (to constrain level)
 - generate story at i+1
 - store via `content cache put`
-- optionally narrate via `audio tts`
+- optionally narrate via `audio tts --out <local temp path>`
 
 ## Output discipline (Telegram-friendly)
 - Prefer multiple short messages to one huge wall.
@@ -392,7 +397,7 @@ xuezh review grade --item w_aaaaaaaaaaaa --recall 4 --pronunciation 2 --next-due
 
 ### Speaking loop (Telegram voice note)
 ```
-xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out artifacts/tts.ogg --backend edge-tts --json
+xuezh audio tts --text "你好" --voice XiaoxiaoNeural --out /tmp/xuezh-tts.ogg --json
 xuezh audio process-voice --in tests/fixtures/audio/voice_min.ogg --ref-text "你好" --json
 ```
 

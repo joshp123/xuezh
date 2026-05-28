@@ -4,7 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"time"
 
 	"github.com/joshp123/xuezh/internal/xuezh/paths"
@@ -24,30 +23,13 @@ var defaults = map[string]int{
 	"cache":     180,
 }
 
-var envKeys = map[string]string{
-	"artifacts": "XUEZH_RETENTION_ARTIFACTS_DAYS",
-	"backups":   "XUEZH_RETENTION_BACKUPS_DAYS",
-	"exports":   "XUEZH_RETENTION_EXPORTS_DAYS",
-	"cache":     "XUEZH_RETENTION_CACHE_DAYS",
-}
-
 func LoadConfig() Config {
 	return Config{
-		ArtifactsDays: loadDays("artifacts"),
-		BackupsDays:   loadDays("backups"),
-		ExportsDays:   loadDays("exports"),
-		CacheDays:     loadDays("cache"),
+		ArtifactsDays: defaults["artifacts"],
+		BackupsDays:   defaults["backups"],
+		ExportsDays:   defaults["exports"],
+		CacheDays:     defaults["cache"],
 	}
-}
-
-func loadDays(key string) int {
-	envKey := envKeys[key]
-	if raw := os.Getenv(envKey); raw != "" {
-		if value, err := strconv.Atoi(raw); err == nil {
-			return value
-		}
-	}
-	return defaults[key]
 }
 
 func CollectGCCandidates(root string, now time.Time) ([]string, error) {

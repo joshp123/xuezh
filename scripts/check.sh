@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+echo "== buf lint =="
+buf lint
+
 echo "== go test =="
 go test ./...
 

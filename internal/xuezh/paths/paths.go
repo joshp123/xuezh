@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/joshp123/xuezh/internal/xuezh/config"
 )
 
 const defaultWorkspace = ".clawdbot/workspace/xuezh"
@@ -12,8 +14,10 @@ const defaultWorkspace = ".clawdbot/workspace/xuezh"
 var workspaceSubdirs = []string{"artifacts", "cache", "exports", "backups"}
 
 func WorkspaceDir() (string, error) {
-	if override := os.Getenv("XUEZH_WORKSPACE_DIR"); override != "" {
-		return expandHome(override)
+	if dir, ok, err := config.GetString("workspace", "dir"); err != nil {
+		return "", err
+	} else if ok {
+		return expandHome(dir)
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -23,9 +27,6 @@ func WorkspaceDir() (string, error) {
 }
 
 func DBPath() (string, error) {
-	if override := os.Getenv("XUEZH_DB_PATH"); override != "" {
-		return expandHome(override)
-	}
 	root, err := WorkspaceDir()
 	if err != nil {
 		return "", err

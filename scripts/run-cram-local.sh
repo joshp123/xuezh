@@ -3,7 +3,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-WORKSPACE="${XUEZH_WORKSPACE_DIR:-$HOME/.local/share/xuezh/cram-local}"
+WORKSPACE="$HOME/.local/share/xuezh/cram-local"
 CORPUS="${XUEZH_HELLOCHINESE_CORPUS:-/Users/josh/Library/Mobile Documents/com~apple~CloudDocs/Full Pleco Import.txt}"
 TRAVEL_CORPUS="${XUEZH_TRAVEL_CORPUS:-/Users/josh/Library/Mobile Documents/com~apple~CloudDocs/Travel Survival Pleco Import.txt}"
 PLECO_BACKUP="${XUEZH_PLECO_BACKUP:-/Users/josh/Downloads/Pleco Flash Backup 260502.pqb}"
@@ -13,13 +13,19 @@ AUDIO_RATES="${XUEZH_AUDIO_RATES:-zh-CN-XiaoxiaoNeural=-23%,zh-CN-XiaoyiNeural=-
 AUDIO_CONCURRENCY="${XUEZH_AUDIO_CONCURRENCY:-8}"
 AUDIO_REPLACE="${XUEZH_AUDIO_REPLACE:-0}"
 PLECO_FORCE="${XUEZH_FORCE_PLECO_IMPORT:-0}"
+CONFIG_HOME="$(mktemp -d "${TMPDIR:-/tmp}/xuezh-cram-config.XXXXXX")"
+trap 'rm -rf "$CONFIG_HOME"' EXIT
+mkdir -p "$CONFIG_HOME/xuezh"
+workspace_toml="${WORKSPACE//\\/\\\\}"
+workspace_toml="${workspace_toml//\"/\\\"}"
+printf '[workspace]\ndir = "%s"\n' "$workspace_toml" > "$CONFIG_HOME/xuezh/config.toml"
 
 run_xuezh() {
-  XUEZH_WORKSPACE_DIR="$WORKSPACE" go run ./cmd/xuezh-go "$@"
+  XDG_CONFIG_HOME="$CONFIG_HOME" go run ./cmd/xuezh-go "$@"
 }
 
 run_xuezh_devenv() {
-  XUEZH_WORKSPACE_DIR="$WORKSPACE" devenv shell -- go run ./cmd/xuezh-go "$@"
+  XDG_CONFIG_HOME="$CONFIG_HOME" devenv shell -- go run ./cmd/xuezh-go "$@"
 }
 
 echo "workspace: $WORKSPACE"

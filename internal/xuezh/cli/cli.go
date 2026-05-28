@@ -1,12 +1,10 @@
 package cli
 
 import (
-	"database/sql"
 	"errors"
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -14,7 +12,6 @@ import (
 	"github.com/joshp123/xuezh/internal/xuezh/audio"
 	"github.com/joshp123/xuezh/internal/xuezh/clock"
 	"github.com/joshp123/xuezh/internal/xuezh/config"
-	"github.com/joshp123/xuezh/internal/xuezh/content"
 	"github.com/joshp123/xuezh/internal/xuezh/cram"
 	"github.com/joshp123/xuezh/internal/xuezh/datasets"
 	"github.com/joshp123/xuezh/internal/xuezh/db"
@@ -23,23 +20,28 @@ import (
 	"github.com/joshp123/xuezh/internal/xuezh/jsonio"
 	"github.com/joshp123/xuezh/internal/xuezh/paths"
 	"github.com/joshp123/xuezh/internal/xuezh/process"
-	"github.com/joshp123/xuezh/internal/xuezh/reports"
 	"github.com/joshp123/xuezh/internal/xuezh/retention"
-	"github.com/joshp123/xuezh/internal/xuezh/snapshot"
-	"github.com/joshp123/xuezh/internal/xuezh/srs"
+	"github.com/joshp123/xuezh/internal/xuezh/service"
 	"github.com/joshp123/xuezh/internal/xuezh/webserver"
 )
-
-const version = "0.1.0"
 
 func Run(args []string) int {
 	if len(args) == 0 {
 		printUsage()
 		return 1
 	}
-	switch args[0] {
-	case "version":
+	if args[0] == "version" {
 		return runVersion(args[1:])
+	}
+	serverURL, clientBacked, err := config.GetString("client", "server_url")
+	if err != nil {
+		commandID, _ := commandIDFromArgs(args)
+		return emitError(commandID, err)
+	}
+	if clientBacked {
+		return runClientBacked(args, serverURL)
+	}
+	switch args[0] {
 	case "snapshot":
 		return runSnapshot(args[1:])
 	case "learner":
@@ -133,7 +135,7 @@ func runLearnerState(args []string) int {
 	if err != nil {
 		return emitError("learner.state", err)
 	}
-	state, err := cram.LearnerStateFor(now)
+	state, err := service.New().LearnerState(now)
 	if err != nil {
 		return emitError("learner.state", err)
 	}
@@ -506,10 +508,10 @@ func runVersion(args []string) int {
 		return 1
 	}
 	if *jsonOut {
-		out := envelope.OK("version", map[string]any{"version": version}, nil, false, nil)
+		out := envelope.OK("version", map[string]any{"version": service.Version}, nil, false, nil)
 		return emit(out)
 	}
-	fmt.Fprintf(os.Stdout, "xuezh %s\n", version)
+	fmt.Fprintf(os.Stdout, "xuezh %s\n", service.Version)
 	return 0
 }
 
@@ -524,7 +526,7 @@ func runSnapshot(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
-	result, err := snapshot.BuildSnapshot(*window, *dueLimit, *evidenceLimit, *maxBytes)
+	result, err := service.New().Snapshot(*window, *dueLimit, *evidenceLimit, *maxBytes)
 	if err != nil {
 		return emitError("snapshot", err)
 	}
@@ -625,29 +627,27 @@ func runReviewStart(args []string) int {
 	if err != nil {
 		return emitError("review.start", err)
 	}
-	recallItems, err := srs.ListDueItems(*limit, now, "recall")
+	result, err := service.New().StartReview(*limit, now)
 	if err != nil {
 		return emitError("review.start", err)
 	}
-	pronunciationItems, err := srs.ListDueItems(*limit, now, "pronunciation")
-	if err != nil {
-		return emitError("review.start", err)
-	}
-	recallPayload := []map[string]any{}
-	for _, item := range recallItems {
-		recallPayload = append(recallPayload, map[string]any{"item_id": item.ItemID, "due_at": item.DueAt, "review_type": item.ReviewType})
-	}
-	pronPayload := []map[string]any{}
-	for _, item := range pronunciationItems {
-		pronPayload = append(pronPayload, map[string]any{"item_id": item.ItemID, "due_at": item.DueAt, "review_type": item.ReviewType})
-	}
+	recallPayload := reviewItemsPayload(result.RecallItems)
+	pronPayload := reviewItemsPayload(result.PronunciationItems)
 	out := envelope.OK("review.start", map[string]any{
 		"items":               recallPayload,
 		"recall_items":        recallPayload,
 		"pronunciation_items": pronPayload,
-		"generated_at":        clock.FormatISO(now),
+		"generated_at":        result.GeneratedAt,
 	}, nil, false, map[string]any{"limit": *limit})
 	return emit(out)
+}
+
+func reviewItemsPayload(items []service.ReviewItem) []map[string]any {
+	payload := []map[string]any{}
+	for _, item := range items {
+		payload = append(payload, map[string]any{"item_id": item.ItemID, "due_at": item.DueAt, "review_type": item.ReviewType})
+	}
+	return payload
 }
 
 func runReviewGrade(args []string) int {
@@ -690,92 +690,52 @@ func runReviewGrade(args []string) int {
 	if err != nil {
 		return emitTypedError("review.grade", "INVALID_ARGUMENT", "invalid pronunciation grade", map[string]any{"item": *item})
 	}
+	var legacyGrade *int
 	if *grade != "" {
 		value, err := strconv.Atoi(*grade)
 		if err != nil {
 			return emitTypedError("review.grade", "INVALID_ARGUMENT", "invalid grade", map[string]any{"item": *item})
 		}
-		recallGrade = &value
-	}
-	gradeValue := recallGrade
-	if *grade == "" {
-		gradeValue = nil
+		legacyGrade = &value
+		recallGrade = legacyGrade
 	}
 	now, err := clock.NowUTC()
 	if err != nil {
 		return emitError("review.grade", err)
 	}
-	var recallDueAt *string
-	var recallRule *string
-	if recallGrade != nil {
-		dueAt, appliedRule, err := srs.ScheduleNextDue(*recallGrade, now, *rule, *nextDue)
-		if err != nil {
-			return emitError("review.grade", err)
-		}
-		recallDueAt = &dueAt
-		if appliedRule != "" {
-			recallRule = &appliedRule
-		}
-	}
-	var pronDueAt *string
-	var pronRule *string
-	if pronGrade != nil {
-		pronNextDue := ""
-		if recallGrade == nil {
-			pronNextDue = *nextDue
-		}
-		dueAt, appliedRule, err := srs.ScheduleNextDue(*pronGrade, now, *rule, pronNextDue)
-		if err != nil {
-			return emitError("review.grade", err)
-		}
-		pronDueAt = &dueAt
-		if appliedRule != "" {
-			pronRule = &appliedRule
-		}
-	}
-	if err := srs.UpsertKnowledge(*item, recallDueAt, recallGrade, pronDueAt, pronGrade, now); err != nil {
+	result, err := service.New().GradeReview(service.GradeReviewOptions{
+		ItemID:             *item,
+		RecallGrade:        recallGrade,
+		PronunciationGrade: pronGrade,
+		NextDue:            *nextDue,
+		Rule:               *rule,
+	}, now)
+	if err != nil {
 		return emitError("review.grade", err)
 	}
-	if recallGrade != nil {
-		payload := map[string]any{
-			"review_type": "recall",
-			"grade":       *recallGrade,
-			"rule":        recallRule,
-			"next_due":    recallDueAt,
-		}
-		if err := srs.RecordReviewEvent(*item, "review.grade", payload, now); err != nil {
-			return emitError("review.grade", err)
-		}
-	}
-	if pronGrade != nil {
-		payload := map[string]any{
-			"review_type": "pronunciation",
-			"grade":       *pronGrade,
-			"rule":        pronRule,
-			"next_due":    pronDueAt,
-		}
-		if err := srs.RecordReviewEvent(*item, "review.grade", payload, now); err != nil {
-			return emitError("review.grade", err)
-		}
-	}
-	data := map[string]any{"item": *item}
-	if recallGrade != nil {
-		data["recall_grade"] = *recallGrade
-		data["recall_next_due"] = recallDueAt
-		data["recall_rule_applied"] = recallRule
-	}
-	if pronGrade != nil {
-		data["pronunciation_grade"] = *pronGrade
-		data["pronunciation_next_due"] = pronDueAt
-		data["pronunciation_rule_applied"] = pronRule
-	}
-	if gradeValue != nil {
-		data["grade"] = *gradeValue
-		data["next_due"] = recallDueAt
-		data["rule_applied"] = recallRule
-	}
+	data := reviewGradePayload(result, legacyGrade != nil)
 	out := envelope.OK("review.grade", data, nil, false, nil)
 	return emit(out)
+}
+
+func reviewGradePayload(result service.GradeReviewResult, includeLegacyGrade bool) map[string]any {
+	data := map[string]any{"item": result.ItemID}
+	if result.RecallGrade != nil {
+		data["recall_grade"] = *result.RecallGrade
+		data["recall_next_due"] = result.RecallNextDue
+		data["recall_rule_applied"] = result.RecallRuleApplied
+	}
+	if result.PronunciationGrade != nil {
+		data["pronunciation_grade"] = *result.PronunciationGrade
+		data["pronunciation_next_due"] = result.PronunciationNextDue
+		data["pronunciation_rule_applied"] = result.PronunciationRuleApplied
+	}
+	if includeLegacyGrade && result.RecallGrade != nil {
+		data["grade"] = *result.RecallGrade
+		data["next_due"] = result.RecallNextDue
+		data["rule_applied"] = result.RecallRuleApplied
+	}
+	return data
 }
 
 func runReviewBury(args []string) int {
@@ -794,18 +754,11 @@ func runReviewBury(args []string) int {
 	if err != nil {
 		return emitError("review.bury", err)
 	}
-	dueAt, _, err := srs.ScheduleNextDue(0, now, "leitner", "")
+	result, err := service.New().BuryReview(*item, *reason, now)
 	if err != nil {
 		return emitError("review.bury", err)
 	}
-	if err := srs.UpsertKnowledge(*item, &dueAt, nil, nil, nil, now); err != nil {
-		return emitError("review.bury", err)
-	}
-	payload := map[string]any{"reason": *reason, "next_due": dueAt}
-	if err := srs.RecordReviewEvent(*item, "review.bury", payload, now); err != nil {
-		return emitError("review.bury", err)
-	}
-	out := envelope.OK("review.bury", map[string]any{"item": *item, "reason": *reason, "next_due": dueAt}, nil, false, nil)
+	out := envelope.OK("review.bury", map[string]any{"item": result.ItemID, "reason": result.Reason, "next_due": result.NextDue}, nil, false, nil)
 	return emit(out)
 }
 
@@ -835,15 +788,11 @@ func runSRSPreview(args []string) int {
 	if err != nil {
 		return emitError("srs.preview", err)
 	}
-	recall, err := srs.PreviewDue(*days, now, "recall")
+	result, err := service.New().PreviewSRS(*days, now)
 	if err != nil {
 		return emitError("srs.preview", err)
 	}
-	pron, err := srs.PreviewDue(*days, now, "pronunciation")
-	if err != nil {
-		return emitError("srs.preview", err)
-	}
-	out := envelope.OK("srs.preview", map[string]any{"days": *days, "forecast": map[string]any{"recall": recall, "pronunciation": pron}}, nil, false, nil)
+	out := envelope.OK("srs.preview", map[string]any{"days": result.Days, "forecast": result.Forecast}, nil, false, nil)
 	return emit(out)
 }
 
@@ -880,7 +829,7 @@ func runReportHSK(args []string) int {
 	if *level == "" {
 		return emitTypedError("report.hsk", "INVALID_ARGUMENT", "level is required", map[string]any{"level": *level})
 	}
-	result, err := reports.BuildHSKReport(*level, *window, *maxItems, *maxBytes, *includeChars)
+	result, err := service.New().ReportHSK(*level, *window, *maxItems, *maxBytes, *includeChars)
 	if err != nil {
 		return emitError("report.hsk", err)
 	}
@@ -899,7 +848,7 @@ func runReportMastery(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
-	result, err := reports.BuildMasteryReport(*itemType, *window, *maxItems, *maxBytes)
+	result, err := service.New().ReportMastery(*itemType, *window, *maxItems, *maxBytes)
 	if err != nil {
 		return emitError("report.mastery", err)
 	}
@@ -920,16 +869,20 @@ func runReportDue(args []string) int {
 	if err != nil {
 		return emitError("report.due", err)
 	}
-	items, err := srs.ListDueItems(*limit, now, "recall")
+	result, err := service.New().ReportDue(*limit, *maxBytes, now)
 	if err != nil {
 		return emitError("report.due", err)
 	}
+	out := envelope.OK("report.due", map[string]any{"items": dueReportPayload(result.Items)}, nil, false, map[string]any{"limit": result.Limit, "max_bytes": result.MaxBytes})
+	return emit(out)
+}
+
+func dueReportPayload(items []service.DueReportItem) []map[string]any {
 	payload := []map[string]any{}
 	for _, item := range items {
 		payload = append(payload, map[string]any{"item_id": item.ItemID, "due_at": item.DueAt})
 	}
-	out := envelope.OK("report.due", map[string]any{"items": payload}, nil, false, map[string]any{"limit": *limit, "max_bytes": *maxBytes})
-	return emit(out)
+	return payload
 }
 
 func runEvent(args []string) int {
@@ -968,7 +921,12 @@ func runEventLog(args []string) int {
 	if *context != "" {
 		contextPtr = context
 	}
-	event, err := events.LogEvent(*eventType, *modality, parsed, contextPtr)
+	event, err := service.New().LogEvent(service.LogEventOptions{
+		EventType: *eventType,
+		Modality:  *modality,
+		Items:     parsed,
+		Context:   contextPtr,
+	})
 	if err != nil {
 		return emitError("event.log", err)
 	}
@@ -992,7 +950,7 @@ func runEventList(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
-	items, err := events.ListEvents(*since, *limit)
+	items, err := service.New().ListEvents(*since, *limit)
 	if err != nil {
 		return emitError("event.list", err)
 	}
@@ -1055,12 +1013,43 @@ func runContentCachePut(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
-	result, err := content.PutContent(*contentType, *key, *inPath)
+	filename, data, err := readCLIInputFile(*inPath)
+	if err != nil {
+		return emitTypedError("content.cache.put", "INVALID_ARGUMENT", err.Error(), map[string]any{"type": *contentType, "key": *key, "in": *inPath})
+	}
+	result, err := service.New().PutContent(service.PutContentOptions{ContentType: *contentType, Key: *key, Filename: filename, Data: data})
 	if err != nil {
 		return emitTypedError("content.cache.put", "INVALID_ARGUMENT", err.Error(), map[string]any{"type": *contentType, "key": *key, "in": *inPath})
 	}
 	out := envelope.OK("content.cache.put", result.Data, result.Artifacts, false, nil)
 	return emit(out)
+}
+
+func readCLIInputFile(path string) (string, []byte, error) {
+	expanded := expandLocalPath(path)
+	if _, err := os.Stat(expanded); err != nil {
+		return "", nil, fmt.Errorf("Input file not found: %s", expanded)
+	}
+	data, err := os.ReadFile(expanded)
+	if err != nil {
+		return "", nil, err
+	}
+	return filepath.Base(expanded), data, nil
+}
+
+func expandLocalPath(path string) string {
+	if strings.HasPrefix(path, "~") {
+		home, err := os.UserHomeDir()
+		if err == nil {
+			if path == "~" {
+				return home
+			}
+			if strings.HasPrefix(path, "~/") {
+				return filepath.Join(home, path[2:])
+			}
+		}
+	}
+	return path
 }
 
 func runContentCacheGet(args []string) int {
@@ -1072,7 +1061,7 @@ func runContentCacheGet(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
-	result, err := content.GetContent(*contentType, *key)
+	result, err := service.New().GetContent(*contentType, *key)
 	if err != nil {
 		return emitTypedError("content.cache.get", "NOT_FOUND", err.Error(), map[string]any{"type": *contentType, "key": *key})
 	}
@@ -1112,7 +1101,7 @@ func runAudioConvert(args []string) int {
 	if *inPath == "" || *outPath == "" || *format == "" {
 		return emitTypedError("audio.convert", "INVALID_ARGUMENT", "in, out, and format are required", map[string]any{"in": *inPath, "out": *outPath, "format": *format})
 	}
-	resolvedBackend := resolveAudioBackend(*backend, "ffmpeg", "XUEZH_AUDIO_CONVERT_BACKEND", "convert_backend")
+	resolvedBackend := resolveAudioBackend(*backend, "ffmpeg", "convert_backend")
 	result, err := audio.ConvertAudio(*inPath, *outPath, *format, resolvedBackend, "converted_audio")
 	if err != nil {
 		var toolMissing process.ToolMissingError
@@ -1166,8 +1155,8 @@ func runAudioTTS(args []string) int {
 	if *text == "" || *outPath == "" {
 		return emitTypedError("audio.tts", "INVALID_ARGUMENT", "text and out are required", map[string]any{"text": *text, "out": *outPath})
 	}
-	resolvedBackend := resolveAudioBackend(*backend, "edge-tts", "XUEZH_AUDIO_TTS_BACKEND", "tts_backend")
-	result, err := audio.TTSAudio(*text, *voice, *outPath, resolvedBackend, "tts_audio")
+	resolvedBackend := resolveAudioBackend(*backend, "edge-tts", "tts_backend")
+	result, err := service.New().TTS(*text, *voice, *outPath, resolvedBackend, "tts_audio")
 	if err != nil {
 		var toolMissing process.ToolMissingError
 		if errors.As(err, &toolMissing) {
@@ -1218,8 +1207,12 @@ func runAudioProcessVoice(args []string) int {
 	if *inPath == "" || *refText == "" {
 		return emitTypedError("audio.process-voice", "INVALID_ARGUMENT", "in and ref-text are required", map[string]any{"in": *inPath, "ref_text": *refText})
 	}
-	backend := resolveAudioBackend("", "azure.speech", "XUEZH_AUDIO_PROCESS_VOICE_BACKEND", "process_voice_backend")
-	result, err := audio.ProcessVoice(*inPath, *refText, backend)
+	backend := resolveAudioBackend("", "azure.speech", "process_voice_backend")
+	now, nowErr := clock.NowUTC()
+	if nowErr != nil {
+		return emitError("audio.process-voice", nowErr)
+	}
+	result, _, err := service.New().ProcessVoice(*inPath, *refText, backend, now)
 	if err != nil {
 		var azureErr audio.AzureSpeechError
 		if errors.As(err, &azureErr) {
@@ -1278,145 +1271,12 @@ func runDoctor(args []string) int {
 	if err := fs.Parse(args); err != nil {
 		return 1
 	}
-	checks := []map[string]any{}
-
-	workspace, err := paths.WorkspaceDir()
+	result, err := service.New().Doctor("local")
 	if err != nil {
 		return emitError("doctor", err)
 	}
-	workspaceExists := false
-	if _, err := os.Stat(workspace); err == nil {
-		workspaceExists = true
-	}
-	workspaceOverride := os.Getenv("XUEZH_WORKSPACE_DIR")
-	var workspaceOverrideValue any
-	if workspaceOverride != "" {
-		workspaceOverrideValue = workspaceOverride
-	}
-	checks = append(checks, map[string]any{
-		"name": "workspace.path",
-		"ok":   true,
-		"details": map[string]any{
-			"path":     workspace,
-			"exists":   workspaceExists,
-			"override": workspaceOverrideValue,
-		},
-	})
-
-	dbPath, err := paths.DBPath()
-	if err != nil {
-		return emitError("doctor", err)
-	}
-	dbExists := false
-	if _, err := os.Stat(dbPath); err == nil {
-		dbExists = true
-	}
-	dbOverride := os.Getenv("XUEZH_DB_PATH")
-	var dbOverrideValue any
-	if dbOverride != "" {
-		dbOverrideValue = dbOverride
-	}
-	dbDetails := map[string]any{"path": dbPath, "exists": dbExists, "override": dbOverrideValue}
-	if dbExists {
-		conn, err := sql.Open("sqlite3", dbPath)
-		if err != nil {
-			dbDetails["error"] = err.Error()
-			checks = append(checks, map[string]any{"name": "db.status", "ok": false, "details": dbDetails})
-		} else {
-			defer conn.Close()
-			var count int
-			row := conn.QueryRow("SELECT COUNT(*) FROM schema_migrations")
-			if err := row.Scan(&count); err != nil {
-				dbDetails["error"] = err.Error()
-				checks = append(checks, map[string]any{"name": "db.status", "ok": false, "details": dbDetails})
-			} else {
-				dbDetails["schema_migrations"] = count
-				checks = append(checks, map[string]any{"name": "db.status", "ok": true, "details": dbDetails})
-			}
-		}
-	} else {
-		checks = append(checks, map[string]any{"name": "db.status", "ok": false, "details": dbDetails})
-	}
-
-	for _, tool := range []string{"ffmpeg", "edge-tts", "whisper"} {
-		path, err := exec.LookPath(tool)
-		ok := err == nil && path != ""
-		checks = append(checks, map[string]any{
-			"name":    "tool." + tool,
-			"ok":      ok,
-			"details": map[string]any{"path": path},
-		})
-	}
-
-	checks = append(checks, map[string]any{
-		"name":    "tool.azure-speech-sdk",
-		"ok":      true,
-		"details": map[string]any{"version": "rest"},
-	})
-
-	configSection, ok, _ := config.GetValue("azure", "speech")
-	var configKey, configRegion string
-	var configKeyPresent bool
-	if ok {
-		if sectionMap, ok := configSection.(map[string]any); ok {
-			if value, ok := sectionMap["key"].(string); ok && strings.TrimSpace(value) != "" {
-				configKey = value
-			}
-			if value, ok := sectionMap["key_file"].(string); ok && strings.TrimSpace(value) != "" {
-				keyPath := value
-				if strings.HasPrefix(keyPath, "~") {
-					if home, err := os.UserHomeDir(); err == nil {
-						keyPath = filepath.Join(home, strings.TrimPrefix(keyPath, "~/"))
-					}
-				}
-				if data, err := os.ReadFile(keyPath); err == nil {
-					configKey = strings.TrimSpace(string(data))
-				}
-			}
-			if value, ok := sectionMap["region"].(string); ok && strings.TrimSpace(value) != "" {
-				configRegion = value
-			}
-		}
-	}
-	if strings.TrimSpace(configKey) != "" {
-		configKeyPresent = true
-	}
-	envKeyFile := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_KEY_FILE"))
-	envRegion := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_REGION"))
-	envRegionFile := strings.TrimSpace(os.Getenv("XUEZH_AZURE_SPEECH_REGION_FILE"))
-	envKeyFilePresent := readableNonEmptyFile(envKeyFile)
-	envRegionPresent := envRegion != "" || readableNonEmptyFile(envRegionFile)
-	configRegionPresent := strings.TrimSpace(configRegion) != ""
-	configPath, _ := config.ConfigPath()
-	checks = append(checks, map[string]any{
-		"name": "azure.speech.env",
-		"ok":   (envKeyFilePresent || configKeyPresent) && (envRegionPresent || configRegionPresent),
-		"details": map[string]any{
-			"XUEZH_AZURE_SPEECH_KEY_FILE":    envKeyFilePresent,
-			"XUEZH_AZURE_SPEECH_REGION":      envRegion != "",
-			"XUEZH_AZURE_SPEECH_REGION_FILE": envRegionFile != "" && readableNonEmptyFile(envRegionFile),
-			"config_key":                     configKeyPresent,
-			"config_region":                  configRegionPresent,
-			"config_path":                    configPath,
-		},
-	})
-
-	out := envelope.OK("doctor", map[string]any{"checks": checks}, nil, false, nil)
+	out := envelope.OK("doctor", doctorData(result), nil, false, nil)
 	return emit(out)
-}
-
-func readableNonEmptyFile(path string) bool {
-	path = strings.TrimSpace(path)
-	if path == "" {
-		return false
-	}
-	if strings.HasPrefix(path, "~") {
-		if home, err := os.UserHomeDir(); err == nil {
-			path = filepath.Join(home, strings.TrimPrefix(path, "~/"))
-		}
-	}
-	data, err := os.ReadFile(path)
-	return err == nil && strings.TrimSpace(string(data)) != ""
 }
 
 func runGC(args []string) int {
@@ -1482,7 +1342,7 @@ func runGC(args []string) int {
 	return emit(out)
 }
 
-func resolveAudioBackend(cliValue, defaultValue, envKey, configKey string) string {
+func resolveAudioBackend(cliValue, defaultValue, configKey string) string {
 	if cliValue != "" {
 		return cliValue
 	}
@@ -1493,12 +1353,6 @@ func resolveAudioBackend(cliValue, defaultValue, envKey, configKey string) strin
 	}
 	if value, ok := configString("audio", "backend_global"); ok {
 		return value
-	}
-	if envValue := os.Getenv(envKey); envValue != "" {
-		return envValue
-	}
-	if envValue := os.Getenv("XUEZH_AUDIO_BACKEND"); envValue != "" {
-		return envValue
 	}
 	return defaultValue
 }
@@ -1580,7 +1434,12 @@ func emit(payload any) int {
 }
 
 func emitError(command string, err error) int {
-	env, buildErr := envelope.Err(command, "BACKEND_FAILED", err.Error(), nil)
+	errorType := "BACKEND_FAILED"
+	var configConflict config.ConfigConflictError
+	if errors.As(err, &configConflict) {
+		errorType = "CONFIG_CONFLICT"
+	}
+	env, buildErr := envelope.Err(command, errorType, err.Error(), nil)
 	if buildErr != nil {
 		fmt.Fprintln(os.Stderr, buildErr)
 		return 1

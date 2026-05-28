@@ -12,6 +12,10 @@
     jq
     go
     gopls
+    buf
+    protobuf
+    protoc-gen-go
+    protoc-gen-connect-go
     nodejs_22
     pnpm
 
@@ -31,16 +35,5 @@
   enterShell = ''
     echo "Entered devenv shell for xuezh."
     echo "Reminder: do not use brew/global installs; update devenv.nix instead."
-
-    # Load Azure Speech creds from nix-secrets (agenix) without touching global nixos-config
-    if command -v agenix >/dev/null 2>&1; then
-      if [[ -f "$HOME/code/nix/nix-secrets/xuezh-azure-speech-key.age" ]]; then
-        mkdir -p .devenv/state
-        export XUEZH_AZURE_SPEECH_KEY_FILE="$PWD/.devenv/state/xuezh-azure-speech-key"
-        (cd "$HOME/code/nix/nix-secrets" && RULES=./secrets.nix agenix -d xuezh-azure-speech-key.age) > "$XUEZH_AZURE_SPEECH_KEY_FILE"
-        chmod 600 "$XUEZH_AZURE_SPEECH_KEY_FILE"
-      fi
-    fi
-    export XUEZH_AZURE_SPEECH_REGION="westeurope"
   '';
 }

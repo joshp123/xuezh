@@ -16,17 +16,14 @@ Artifacts under `artifacts/` should be stored in date buckets:
 
 ## Default retention windows
 
-Defaults (can be overridden by env vars):
+Defaults:
 - `artifacts/`: keep 90 days
 - `backups/`: keep 30 days
 - `exports/`: keep 180 days
 - `cache/`: keep 180 days (or size-capped, but deterministic)
 
-Environment overrides:
-- `XUEZH_RETENTION_ARTIFACTS_DAYS`
-- `XUEZH_RETENTION_BACKUPS_DAYS`
-- `XUEZH_RETENTION_EXPORTS_DAYS`
-- `XUEZH_RETENTION_CACHE_DAYS`
+Retention is not runtime-configurable today. Add a config-file key only when a
+real retention tuning need exists.
 
 ## Garbage collection command
 

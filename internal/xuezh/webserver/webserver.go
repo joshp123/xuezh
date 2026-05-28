@@ -13,6 +13,8 @@ import (
 
 	"github.com/joshp123/xuezh/internal/xuezh/cram"
 	"github.com/joshp123/xuezh/internal/xuezh/paths"
+	"github.com/joshp123/xuezh/internal/xuezh/rpc"
+	"github.com/joshp123/xuezh/internal/xuezh/service"
 )
 
 type ServerOptions struct {
@@ -24,7 +26,13 @@ func Serve(opts ServerOptions) error {
 	if port == 0 {
 		port = 8765
 	}
+	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), newMux())
+}
+
+func newMux() *http.ServeMux {
 	mux := http.NewServeMux()
+	rpcPath, rpcHandler := rpc.NewHandler(service.New())
+	mux.Handle(rpcPath, rpcHandler)
 	mux.HandleFunc("GET /api/learner/state", handleLearnerState)
 	mux.HandleFunc("GET /api/cram/overview", handleOverview)
 	mux.HandleFunc("POST /api/cram/preview", handlePreview)
@@ -39,7 +47,7 @@ func Serve(opts ServerOptions) error {
 	mux.HandleFunc("GET /offline/app-shell", handleOfflineAppShell)
 	mux.HandleFunc("GET /artifacts/", handleArtifact)
 	mux.Handle("/", staticHandler())
-	return http.ListenAndServe(fmt.Sprintf("127.0.0.1:%d", port), mux)
+	return mux
 }
 
 func handleOverview(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +60,7 @@ func handleOverview(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleLearnerState(w http.ResponseWriter, r *http.Request) {
-	state, err := cram.LearnerStateFor(time.Now().UTC())
+	state, err := service.New().LearnerState(time.Now().UTC())
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return

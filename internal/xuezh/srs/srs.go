@@ -103,12 +103,24 @@ func RecordReviewEvent(itemID, eventType string, payload map[string]any, now tim
 		return err
 	}
 	defer conn.Close()
+	tx, err := conn.Begin()
+	if err != nil {
+		return err
+	}
+	if err := RecordReviewEventTx(tx, itemID, eventType, payload, now); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func RecordReviewEventTx(tx *sql.Tx, itemID, eventType string, payload map[string]any, now time.Time) error {
 	eventID := ids.EventIDULID()
 	payloadJSON, err := jsonio.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	_, err = conn.Exec(
+	_, err = tx.Exec(
 		`INSERT INTO review_events (id, item_id, event_type, ts, session_id, payload_json)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		eventID, itemID, eventType, clock.FormatISO(now), nil, payloadJSON,
@@ -129,34 +141,49 @@ func UpsertKnowledge(itemID string, recallDueAt *string, recallGrade *int, pronu
 		return err
 	}
 	defer conn.Close()
+	tx, err := conn.Begin()
+	if err != nil {
+		return err
+	}
+	if err := UpsertKnowledgeTx(tx, itemID, recallDueAt, recallGrade, pronunciationDueAt, pronunciationGrade, now); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func UpsertKnowledgeTx(tx *sql.Tx, itemID string, recallDueAt *string, recallGrade *int, pronunciationDueAt *string, pronunciationGrade *int, now time.Time) error {
+	if recallDueAt == nil && pronunciationDueAt == nil {
+		return nil
+	}
 	itemType := ids.ItemType(itemID)
 	if itemType == "" {
 		itemType = "unknown"
 	}
 	var seenCount int
-	err = conn.QueryRow("SELECT seen_count FROM user_knowledge WHERE item_id = ?", itemID).Scan(&seenCount)
+	err := tx.QueryRow("SELECT seen_count FROM user_knowledge WHERE item_id = ?", itemID).Scan(&seenCount)
 	if err == nil {
 		seenCount++
 		updates := []string{}
 		params := []any{}
 		if recallDueAt != nil {
 			updates = append(updates, "recall_due_at = ?", "recall_last_grade = ?", "due_at = ?", "last_grade = ?")
-			params = append(params, *recallDueAt, recallGrade, *recallDueAt, recallGrade)
+			params = append(params, *recallDueAt, valueOrNil(recallGrade), *recallDueAt, valueOrNil(recallGrade))
 		}
 		if pronunciationDueAt != nil {
 			updates = append(updates, "pronunciation_due_at = ?", "pronunciation_last_grade = ?")
-			params = append(params, *pronunciationDueAt, pronunciationGrade)
+			params = append(params, *pronunciationDueAt, valueOrNil(pronunciationGrade))
 		}
 		updates = append(updates, "last_seen_at = ?", "seen_count = ?")
 		params = append(params, clock.FormatISO(now), seenCount, itemID)
 		query := "UPDATE user_knowledge SET " + strings.Join(updates, ", ") + " WHERE item_id = ?"
-		_, err = conn.Exec(query, params...)
+		_, err = tx.Exec(query, params...)
 		return err
 	}
 	if err != sql.ErrNoRows {
 		return err
 	}
-	_, err = conn.Exec(
+	_, err = tx.Exec(
 		`INSERT INTO user_knowledge
 		(
 		  item_id,

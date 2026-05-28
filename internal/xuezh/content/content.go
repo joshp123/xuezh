@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"io"
 	"mime"
 	"os"
 	"path/filepath"
@@ -58,15 +57,11 @@ func artifactFor(path string) (envelope.Artifact, error) {
 	return envelope.Artifact{Path: rel, MIME: mimeType, Purpose: "cached_content", Bytes: intPtr(int(stat.Size()))}, nil
 }
 
-func PutContent(contentType, key, inPath string) (ContentResult, error) {
+func PutContentBytes(contentType, key, filename string, data []byte) (ContentResult, error) {
 	if _, ok := allowedContentTypes[contentType]; !ok {
 		return ContentResult{}, errors.New("Unsupported content type: " + contentType)
 	}
-	inputPath := expandHome(inPath)
-	if _, err := os.Stat(inputPath); err != nil {
-		return ContentResult{}, errors.New("Input file not found: " + inputPath)
-	}
-	suffix := filepath.Ext(inputPath)
+	suffix := filepath.Ext(filename)
 	if suffix == "" {
 		suffix = ".txt"
 	}
@@ -96,14 +91,14 @@ func PutContent(contentType, key, inPath string) (ContentResult, error) {
 			return ContentResult{}, err
 		}
 		if _, err := os.Stat(resolved); os.IsNotExist(err) {
-			if err := copyFile(inputPath, resolved); err != nil {
+			if err := writeFile(resolved, data); err != nil {
 				return ContentResult{}, err
 			}
 		}
 		destPath = resolved
 	case sql.ErrNoRows:
 		if _, err := os.Stat(destPath); os.IsNotExist(err) {
-			if err := copyFile(inputPath, destPath); err != nil {
+			if err := writeFile(destPath, data); err != nil {
 				return ContentResult{}, err
 			}
 		}
@@ -134,8 +129,8 @@ func PutContent(contentType, key, inPath string) (ContentResult, error) {
 	if err != nil {
 		return ContentResult{}, err
 	}
-	data := map[string]any{"type": contentType, "key": key, "content_id": contentID}
-	return ContentResult{Data: data, Artifacts: []envelope.Artifact{artifact}}, nil
+	payload := map[string]any{"type": contentType, "key": key, "content_id": contentID}
+	return ContentResult{Data: payload, Artifacts: []envelope.Artifact{artifact}}, nil
 }
 
 func GetContent(contentType, key string) (ContentResult, error) {
@@ -175,47 +170,58 @@ func GetContent(contentType, key string) (ContentResult, error) {
 	return ContentResult{Data: data, Artifacts: []envelope.Artifact{artifact}}, nil
 }
 
-func copyFile(src, dst string) error {
-	in, err := os.Open(src)
+func GetContentBytes(contentType, key string) (ContentResult, []byte, error) {
+	result, err := GetContent(contentType, key)
 	if err != nil {
-		return err
+		return ContentResult{}, nil, err
 	}
-	defer in.Close()
-	out, err := os.Create(dst)
+	if len(result.Artifacts) == 0 {
+		return ContentResult{}, nil, errors.New("Cached content has no artifact")
+	}
+	path, err := paths.ResolveInWorkspace(result.Artifacts[0].Path)
+	if err != nil {
+		return ContentResult{}, nil, err
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ContentResult{}, nil, err
+	}
+	return result, data, nil
+}
+
+func writeFile(path string, data []byte) error {
+	out, err := os.Create(path)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		_ = out.Close()
 	}()
-	if _, err := io.Copy(out, in); err != nil {
+	if _, err := out.Write(data); err != nil {
 		return err
 	}
 	return out.Sync()
 }
 
-func expandHome(path string) string {
-	if strings.HasPrefix(path, "~") {
-		home, err := os.UserHomeDir()
-		if err == nil {
-			if path == "~" {
-				return home
-			}
-			if strings.HasPrefix(path, "~/") {
-				return filepath.Join(home, path[2:])
-			}
-		}
-	}
-	return path
-}
-
 func relativeTo(base, target string) (string, error) {
-	baseClean := filepath.Clean(base)
-	targetClean := filepath.Clean(target)
+	baseClean := cleanExistingPath(base)
+	targetClean := cleanExistingPath(target)
 	if targetClean != baseClean && !strings.HasPrefix(targetClean, baseClean+string(filepath.Separator)) {
 		return "", fmt.Errorf("'%s' is not in the subpath of '%s'", target, base)
 	}
-	return filepath.Rel(base, target)
+	return filepath.Rel(baseClean, targetClean)
+}
+
+func cleanExistingPath(path string) string {
+	abs, err := filepath.Abs(path)
+	if err == nil {
+		path = abs
+	}
+	resolved, err := filepath.EvalSymlinks(path)
+	if err == nil {
+		path = resolved
+	}
+	return filepath.Clean(path)
 }
 
 func intPtr(value int) *int {
